@@ -162,18 +162,18 @@ function initSkillsFilter() {
 
       skillCards.forEach(card => {
         const category = card.getAttribute('data-category');
-        if (filterValue === 'all' || category === filterValue) {
-          card.style.display = 'flex';
-          setTimeout(() => {
+        const matches = filterValue === 'all' || category === filterValue;
+
+        if (matches) {
+          card.classList.remove('is-hidden');
+          requestAnimationFrame(() => {
             card.style.opacity = '1';
             card.style.transform = 'translateY(0)';
-          }, 20);
+          });
         } else {
           card.style.opacity = '0';
-          card.style.transform = 'translateY(10px)';
-          setTimeout(() => {
-            card.style.display = 'none';
-          }, 200);
+          card.style.transform = 'translateY(8px)';
+          card.classList.add('is-hidden');
         }
       });
     });

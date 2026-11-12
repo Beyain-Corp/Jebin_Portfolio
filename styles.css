@@ -3,9 +3,6 @@
    Design System & Styling
    ========================================================================== */
 
-/* Google Fonts Import */
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
-
 /* --- Root Design System & Variables (Light Professional Theme) --- */
 :root {
   --bg-body: #f8fafc;
@@ -212,6 +209,47 @@ code, .font-mono {
   font-size: 1.08rem;
   color: var(--text-muted);
   line-height: 1.7;
+}
+
+/* Subsection Header Utility */
+.subsection-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.subsection-accent-bar {
+  width: 4px;
+  height: 24px;
+  background: var(--accent-cyan);
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.subsection-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text-main);
+  letter-spacing: -0.01em;
+}
+
+/* Brand Utility Classes */
+.brand-linkedin { color: #0a66c2 !important; }
+.brand-instagram { color: #e1306c !important; }
+.brand-github { color: var(--text-main) !important; }
+.brand-whatsapp { color: #25d366 !important; }
+
+/* Responsive Utility Helpers */
+.btn-full-width {
+  width: 100%;
+  justify-content: center;
+}
+
+.btn-social-profile {
+  flex: 1;
+  min-width: 130px;
 }
 
 /* ==========================================================================
@@ -895,8 +933,9 @@ code, .font-mono {
    Executive Summary & Core Values
    ========================================================================== */
 .about-section {
-  padding: 6rem 0;
+  padding: 5.5rem 0;
   position: relative;
+  background: var(--bg-surface);
 }
 
 .about-grid {
@@ -1196,8 +1235,11 @@ code, .font-mono {
    Architecture & Case Studies
    ========================================================================== */
 .architecture-section {
-  padding: 6rem 0;
+  padding: 5.5rem 0;
   position: relative;
+  background: var(--bg-surface-elevated);
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .case-studies-grid {
@@ -1418,6 +1460,13 @@ code, .font-mono {
   margin-bottom: 1.5rem;
 }
 
+.timeline-summary {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  line-height: 1.65;
+  margin-bottom: 1.25rem;
+}
+
 .timeline-bullets li {
   display: flex;
   align-items: flex-start;
@@ -1450,8 +1499,11 @@ code, .font-mono {
    Technical Arsenal / Skills Filter
    ========================================================================== */
 .skills-section {
-  padding: 6rem 0;
+  padding: 5.5rem 0;
   position: relative;
+  background: var(--bg-surface-elevated);
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .skills-filter-tabs {
@@ -1494,11 +1546,15 @@ code, .font-mono {
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   padding: 1.5rem;
-  transition: all var(--transition-normal);
+  transition: opacity 0.2s ease, transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
   display: flex;
   flex-direction: column;
   position: relative;
   overflow: hidden;
+}
+
+.skill-card.is-hidden {
+  display: none !important;
 }
 
 .skill-card:hover {
@@ -1674,6 +1730,7 @@ code, .font-mono {
   justify-content: space-between;
   padding-top: 1.25rem;
   border-top: 1px solid var(--border-subtle);
+  margin-top: auto;
 }
 
 .article-date {
@@ -1728,6 +1785,20 @@ code, .font-mono {
 
 .articles-cta-info {
   max-width: 650px;
+}
+
+.articles-cta-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: var(--text-main);
+}
+
+.articles-cta-desc {
+  font-size: 0.92rem;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.6;
 }
 
 /* Article Modal Dialog Enhancements */
@@ -1814,7 +1885,7 @@ code, .font-mono {
    Interactive SysAdmin Terminal Widget
    ========================================================================== */
 .terminal-section {
-  padding: 5rem 0;
+  padding: 5.5rem 0;
   background: var(--bg-surface);
   position: relative;
 }
@@ -1856,16 +1927,17 @@ code, .font-mono {
 
 .terminal-title {
   font-size: 0.82rem;
-  color: var(--text-muted);
+  color: #94a3b8;
   font-weight: 500;
 }
 
 .terminal-badge {
   font-size: 0.72rem;
-  padding: 0.15rem 0.5rem;
-  background: rgba(16, 185, 129, 0.15);
-  color: var(--accent-emerald);
+  padding: 0.18rem 0.55rem;
+  background: rgba(16, 185, 129, 0.18);
+  color: #34d399;
   border-radius: 4px;
+  font-weight: 600;
 }
 
 .terminal-body {
@@ -1950,7 +2022,9 @@ code, .font-mono {
    Contact & Direct Action Section
    ========================================================================== */
 .contact-section {
-  padding: 6rem 0;
+  padding: 5.5rem 0;
+  background: var(--bg-surface-elevated);
+  border-top: 1px solid var(--border-subtle);
   position: relative;
 }
 
@@ -2138,6 +2212,54 @@ textarea.form-control {
   flex-wrap: wrap;
 }
 
+.contact-form-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: var(--text-main);
+}
+
+.contact-form-desc {
+  font-size: 0.92rem;
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+
+.contact-resume-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-md);
+  padding: 1.75rem;
+  text-align: center;
+  margin-top: 1rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.contact-resume-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: var(--accent-cyan);
+}
+
+.contact-resume-desc {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  margin-bottom: 1.25rem;
+  line-height: 1.6;
+}
+
+.btn-form-submit {
+  flex: 1;
+  min-width: 160px;
+}
+
+.btn-form-whatsapp {
+  flex: 1;
+  min-width: 160px;
+}
+
 /* ==========================================================================
    Footer
    ========================================================================== */
@@ -2295,7 +2417,7 @@ textarea.form-control {
 .modal-body {
   flex: 1;
   padding: 0;
-  background: #1e293b;
+  background: #f8fafc;
   position: relative;
 }
 
@@ -2369,7 +2491,7 @@ textarea.form-control {
 
 .btn-back-top:hover {
   background: var(--accent-cyan);
-  color: #0f172a;
+  color: #ffffff;
 }
 
 /* ==========================================================================
@@ -2467,5 +2589,18 @@ textarea.form-control {
   font-size: 1.35rem;
   font-weight: 700;
   color: var(--text-main);
+}
+
+/* Global Mobile Section Spacing Alignment */
+@media (max-width: 768px) {
+  .about-section,
+  .architecture-section,
+  .experience-section,
+  .skills-section,
+  .articles-section,
+  .terminal-section,
+  .contact-section {
+    padding: 3.5rem 0;
+  }
 }
 

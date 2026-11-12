@@ -77,10 +77,10 @@ async function notionRequest(endpoint, options = {}) {
 }
 
 /**
- * Auto-detect database or shared pages if NOTION_DATABASE_ID is not provided
+ * Auto-detect database or shared pages if NOTION_DATABASE_ID is not provided or invalid
  */
-async function resolveNotionTargets() {
-  if (NOTION_DATABASE_ID) {
+async function resolveNotionTargets(forceAutoDetect = false) {
+  if (!forceAutoDetect && NOTION_DATABASE_ID) {
     const cleaned = cleanDatabaseId(NOTION_DATABASE_ID);
     return { type: 'database', id: cleaned };
   }
@@ -298,21 +298,42 @@ async function syncNotionArticles() {
       ]
     };
 
-    let responseData;
+    let responseData = null;
     try {
       responseData = await notionRequest(`databases/${target.id}/query`, {
         method: 'POST',
         body: queryBody
       });
+      pages = responseData.results || [];
     } catch (err) {
-      // If sorting by "Date" failed because property name differs, try without sorts
-      responseData = await notionRequest(`databases/${target.id}/query`, {
-        method: 'POST',
-        body: {}
-      });
-    }
+      if (err.message.includes('404') || err.message.includes('object_not_found')) {
+        console.warn(`\x1b[33m[WARN]\x1b[0m Could not access database ID "${target.id}" (Notion 404 Not Found).`);
+        console.warn(`       Reason: The database itself is not shared with integration "Jebin's Portfoilo" or ID is a view ID.`);
+        console.log(`\x1b[36m[INFO]\x1b[0m Falling back to auto-discovering all shared pages & databases...`);
 
-    pages = responseData.results || [];
+        const fallbackTarget = await resolveNotionTargets(true);
+        if (fallbackTarget.type === 'database') {
+          const fallbackData = await notionRequest(`databases/${fallbackTarget.id}/query`, {
+            method: 'POST',
+            body: {}
+          });
+          pages = fallbackData.results || [];
+        } else {
+          pages = fallbackTarget.pages || [];
+        }
+      } else {
+        // If sorting by "Date" failed because property name differs, try without sorts
+        try {
+          responseData = await notionRequest(`databases/${target.id}/query`, {
+            method: 'POST',
+            body: {}
+          });
+          pages = responseData.results || [];
+        } catch (retryErr) {
+          throw retryErr;
+        }
+      }
+    }
   } else {
     pages = target.pages || [];
   }
@@ -412,6 +433,19 @@ async function syncNotionArticles() {
     const blocks = await fetchPageBlocks(page.id);
     const contentHtml = convertBlocksToHtml(blocks);
 
+    const allText = blocks.map(b => b[b.type]?.rich_text?.map(t => t.plain_text).join('') || '').join(' ').trim();
+    const words = allText.split(/\s+/).filter(Boolean).length;
+
+    // Check if published or has sufficient content
+    const isExplicitlyPublished = (publishedProp?.type === 'checkbox' && publishedProp?.checkbox === true) ||
+                                  (publishedProp?.type === 'status' && publishedProp?.status?.name?.toLowerCase() === 'published') ||
+                                  (publishedProp?.type === 'select' && publishedProp?.select?.name?.toLowerCase() === 'published');
+
+    if (!isExplicitlyPublished && words < 10) {
+      console.log(`    \x1b[33m[SKIP]\x1b[0m Skipping empty draft: "${title}" (${words} words). Add text or check "Published" in Notion to publish.`);
+      continue;
+    }
+
     // Summary (from property or derived from first block)
     const summaryProp = getProp(['Summary', 'Description', 'Excerpt']);
     let summary = '';
@@ -435,8 +469,6 @@ async function syncNotionArticles() {
       readTime = readTimeProp.rich_text.map(t => t.plain_text).join('').trim();
     }
     if (!readTime) {
-      const allText = blocks.map(b => b[b.type]?.rich_text?.map(t => t.plain_text).join('') || '').join(' ');
-      const words = allText.trim().split(/\s+/).filter(Boolean).length;
       readTime = `${Math.max(1, Math.ceil(words / 200))} min read`;
     }
 
@@ -453,9 +485,25 @@ async function syncNotionArticles() {
     });
   }
 
-  if (articles.length === 0) {
-    console.log('\x1b[33m[WARN]\x1b[0m No published articles were found in Notion. Keeping existing fallback articles.');
-    return;
+  // Load foundational articles as base
+  const foundationalFile = path.resolve(__dirname, '../assets/data/foundational-articles.json');
+  let combinedArticles = [];
+  if (fs.existsSync(foundationalFile)) {
+    try {
+      combinedArticles = JSON.parse(fs.readFileSync(foundationalFile, 'utf8'));
+    } catch (e) {
+      combinedArticles = [];
+    }
+  }
+
+  // Merge Notion articles into foundational base
+  for (const nArt of articles) {
+    const existingIdx = combinedArticles.findIndex(a => a.id === nArt.id);
+    if (existingIdx >= 0) {
+      combinedArticles[existingIdx] = nArt;
+    } else {
+      combinedArticles.push(nArt);
+    }
   }
 
   // Ensure directory exists
@@ -465,8 +513,8 @@ async function syncNotionArticles() {
   }
 
   // Write file
-  fs.writeFileSync(OUTPUT_FILE, JSON.stringify(articles, null, 2), 'utf8');
-  console.log(`\n\x1b[32m[DONE]\x1b[0m Successfully synced ${articles.length} article(s) from Notion!`);
+  fs.writeFileSync(OUTPUT_FILE, JSON.stringify(combinedArticles, null, 2), 'utf8');
+  console.log(`\n\x1b[32m[DONE]\x1b[0m Successfully synced articles! Total published articles: ${combinedArticles.length} (${articles.length} from Notion, ${combinedArticles.length - articles.length} foundational).`);
   console.log(`Saved to: ${OUTPUT_FILE}`);
 }
 
