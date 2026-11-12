@@ -103,3 +103,5 @@ The portfolio is structured as a cohesive, high-performance Single Page Applicat
 
 # Jebin_Portfolio 
 ``` https://beyain-corp.github.io/Jebin_Portfolio/ ```
+```npm run sync:notion ```
+```python3 -m http.server 8080```
