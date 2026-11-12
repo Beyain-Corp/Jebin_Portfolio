@@ -1,0 +1,28 @@
+[
+  {
+    "id": "article-new-project-02",
+    "title": "New project 02",
+    "category": "Idea",
+    "readTime": "1 min read",
+    "date": "November 2026",
+    "summary": "Technical infrastructure analysis and engineering insights.",
+    "tags": [
+      "Idea"
+    ],
+    "linkedinUrl": "https://www.linkedin.com/in/jebinjosephj",
+    "content": "<p>Article content being drafted in Notion.</p>"
+  },
+  {
+    "id": "article-test-project",
+    "title": "Test Project",
+    "category": "Idea",
+    "readTime": "1 min read",
+    "date": "November 2026",
+    "summary": "Technical infrastructure analysis and engineering insights.",
+    "tags": [
+      "Idea"
+    ],
+    "linkedinUrl": "https://www.linkedin.com/in/jebinjosephj",
+    "content": "<p>Article content being drafted in Notion.</p>"
+  }
+]

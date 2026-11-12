@@ -1,0 +1,19 @@
+{
+  "name": "jebin-portfolio",
+  "version": "1.0.0",
+  "description": "Enterprise IT Infrastructure & Systems Portfolio - Jebin Joseph J.",
+  "scripts": {
+    "sync:notion": "node scripts/sync-notion.js",
+    "serve": "python3 -m http.server 8080"
+  },
+  "keywords": [
+    "portfolio",
+    "sysadmin",
+    "infrastructure",
+    "vmware",
+    "notion"
+  ],
+  "author": "Jebin Joseph J.",
+  "license": "MIT"
+}
+
