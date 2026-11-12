@@ -608,7 +608,7 @@ async function syncNotionArticles() {
   if (fs.existsSync(indexHtmlPath)) {
     try {
       let indexHtml = fs.readFileSync(indexHtmlPath, 'utf8');
-      const gridRegex = /(<div class="articles-grid">)([\s\S]*?)(<\/div>\s*<!-- Write & Publish on LinkedIn Banner -->)/;
+      const gridRegex = /(<div class="articles-grid">)([\s\S]*?)(<\/div>\s*<\/div>\s*<\/section>)/;
       if (gridRegex.test(indexHtml)) {
         let cardsHtml = '';
         if (finalArticles.length === 0) {
@@ -651,7 +651,7 @@ async function syncNotionArticles() {
           </article>`).join('\n');
         }
 
-        indexHtml = indexHtml.replace(gridRegex, `$1\n${cardsHtml}\n        </div>\n\n        <!-- Write & Publish on LinkedIn Banner -->`);
+        indexHtml = indexHtml.replace(gridRegex, `$1\n${cardsHtml}\n        </div>\n\n      </div>\n    </section>`);
         fs.writeFileSync(indexHtmlPath, indexHtml, 'utf8');
         console.log(`\x1b[32m[UPDATED]\x1b[0m Pre-rendered Notion articles updated directly in index.html!`);
       }
