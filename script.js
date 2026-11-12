@@ -203,9 +203,9 @@ function initInteractiveTerminal() {
     return `${weekday} ${month} ${day} ${time}`;
   }
 
-  // Set Last Login line to current time in IST (Chennai)
+  // Set Last Login line to current dynamic time in IST (Chennai)
   if (lastLoginEl) {
-    lastLoginEl.textContent = `Last login: ${getISTDateTime()} on ttys004 (IST - Chennai)`;
+    lastLoginEl.textContent = `Last login: ${getISTDateTime()} (IST - Chennai)`;
   }
 
   // Live ticking clock in terminal header (IST - Chennai)
@@ -408,13 +408,13 @@ Status        : 100% HEALTHY & SYNCHRONIZED
     if (cmd === 'clear') {
       output.innerHTML = `
         <div class="terminal-line" style="color: #94a3b8;" id="terminalLastLoginLine">
-          Last login: ${getISTDateTime()} on ttys004 (IST - Chennai)
+          Last login: ${getISTDateTime()} (IST - Chennai)
         </div>
         <div class="terminal-line" style="color: #38bdf8;">
-          Jebin Joseph J. Enterprise Systems Environment initialized. Type 'help' for commands.
+          Jebin Joseph J. Personal Blog Initialized. Type 'help' for commands.
         </div>
         <div class="terminal-line" style="color: #94a3b8;">
-          Type <strong style="color: #38bdf8;">help</strong> or click one of the quick presets below to query node status, skills, or download resume.
+          Type <strong style="color: #38bdf8;">help</strong> or click one of the quick presets below...
         </div>
       `;
       return;

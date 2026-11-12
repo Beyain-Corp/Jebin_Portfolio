@@ -100,39 +100,5 @@ The portfolio is structured as a cohesive, high-performance Single Page Applicat
 
 ---
 
-## 🚀 How to Run Locally
 
-You can open the website immediately in any web browser: (https://beyain-corp.github.io/Jebin_Portfolio/)
-
-### Option 1: Direct File
-Double-click `index.html` or open it directly in Google Chrome, Safari, or Microsoft Edge:
-```bash
-open index.html
-```
-
-### Option 2: Local HTTP Server (Python)
-```bash
-python3 -m http.server 8080
-```
-Then visit [http://localhost:8080](http://localhost:8080) in your browser.
-
----
-
-## 🌐 Free 1-Click Deployment Options
-
-### GitHub Pages:
-1. Initialize a git repository and commit the files:
-   ```bash
-   git init
-   git add .
-   git commit -m "Initial commit of portfolio website"
-   git branch -M main
-   git remote add origin https://github.com/<your-username>/portfolio.git
-   git push -u origin main
-   ```
-2. In your GitHub repository, go to **Settings** > **Pages** > select branch `main` (root) > click **Save**. Your site will be live instantly!
-
-### Vercel / Netlify:
-- Drag and drop this folder directly into [app.netlify.com/drop](https://app.netlify.com/drop) or import from GitHub on Vercel. Zero configuration needed!
-
-# Jebin_Portfolio
+# Jebin_Portfolio -- https://beyain-corp.github.io/Jebin_Portfolio/
