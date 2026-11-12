@@ -189,8 +189,40 @@ function initInteractiveTerminal() {
   const input = document.getElementById('terminalInput');
   const output = document.getElementById('terminalOutput');
   const presetButtons = document.querySelectorAll('.preset-btn');
+  const lastLoginEl = document.getElementById('terminalLastLoginLine');
+  const liveClockEl = document.getElementById('terminalLiveClock');
 
   if (!input || !output) return;
+
+  // Format real-time Last Login timestamp in IST (Chennai, India)
+  function getISTDateTime(d = new Date()) {
+    const weekday = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Kolkata', weekday: 'short' }).format(d);
+    const month = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Kolkata', month: 'short' }).format(d);
+    const day = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Kolkata', day: 'numeric' }).format(d);
+    const time = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(d);
+    return `${weekday} ${month} ${day} ${time}`;
+  }
+
+  // Set Last Login line to current time in IST (Chennai)
+  if (lastLoginEl) {
+    lastLoginEl.textContent = `Last login: ${getISTDateTime()} on ttys004 (IST - Chennai)`;
+  }
+
+  // Live ticking clock in terminal header (IST - Chennai)
+  function updateLiveClock() {
+    if (!liveClockEl) return;
+    const now = new Date();
+    const timeStr = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Kolkata',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    }).format(now);
+    liveClockEl.innerHTML = `<i class="fa-regular fa-clock"></i> <span>${timeStr} IST (Chennai)</span>`;
+  }
+  updateLiveClock();
+  setInterval(updateLiveClock, 1000);
 
   const terminalData = {
     status: `
@@ -296,6 +328,44 @@ Triggering direct download in browser...
 
 * Click any "Read Full Article" button in the Technical Insights section above to open full writeups!
     `,
+    time: () => {
+      const now = new Date();
+      const fullDate = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Asia/Kolkata',
+        dateStyle: 'full',
+        timeStyle: 'medium'
+      }).format(now);
+      return `
+[CLUSTER CLOCK & TIME SERVICES]
+--------------------------------------------------
+Current Time  : ${fullDate}
+Timezone      : Indian Standard Time (IST - Asia/Kolkata)
+Location      : Chennai, Tamil Nadu, India (UTC+05:30)
+NTP Sync      : time.google.com / pool.ntp.org (Synced)
+Precision     : Stratum 1 Reference Clock (Jitter < 0.2ms)
+Status        : 100% HEALTHY & SYNCHRONIZED
+--------------------------------------------------
+      `;
+    },
+    date: () => {
+      const now = new Date();
+      const fullDate = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Asia/Kolkata',
+        dateStyle: 'full',
+        timeStyle: 'medium'
+      }).format(now);
+      return `
+[CLUSTER CLOCK & TIME SERVICES]
+--------------------------------------------------
+Current Time  : ${fullDate}
+Timezone      : Indian Standard Time (IST - Asia/Kolkata)
+Location      : Chennai, Tamil Nadu, India (UTC+05:30)
+NTP Sync      : time.google.com / pool.ntp.org (Synced)
+Precision     : Stratum 1 Reference Clock (Jitter < 0.2ms)
+Status        : 100% HEALTHY & SYNCHRONIZED
+--------------------------------------------------
+      `;
+    },
     banner: `
 ========================================================================
      _ _____ ____ ___ _   _     _  ___  ____  _____ ____  _   _     _ 
@@ -311,6 +381,7 @@ Triggering direct download in browser...
     help: `
 [AVAILABLE COMMANDS]
   status         - View live cluster metrics, uptime & DR status
+  time / date    - Display live IST (Chennai) cluster clock & NTP status
   whoami         - View executive profile, degree & credentials
   skills         - List enterprise technical arsenal & platforms
   articles       - Display published technical engineering articles
@@ -335,15 +406,28 @@ Triggering direct download in browser...
     output.appendChild(userLine);
 
     if (cmd === 'clear') {
-      output.innerHTML = '';
+      output.innerHTML = `
+        <div class="terminal-line" style="color: #94a3b8;" id="terminalLastLoginLine">
+          Last login: ${getISTDateTime()} on ttys004 (IST - Chennai)
+        </div>
+        <div class="terminal-line" style="color: #38bdf8;">
+          Jebin Joseph J. Enterprise Systems Environment initialized. Type 'help' for commands.
+        </div>
+        <div class="terminal-line" style="color: #94a3b8;">
+          Type <strong style="color: #38bdf8;">help</strong> or click one of the quick presets below to query node status, skills, or download resume.
+        </div>
+      `;
       return;
     }
 
     const responseLine = document.createElement('div');
     responseLine.className = 'terminal-line';
 
-    if (terminalData[cmd]) {
-      responseLine.innerHTML = `<pre style="font-family: inherit; margin: 0.35rem 0; white-space: pre-wrap; color: #38bdf8;">${terminalData[cmd].trim()}</pre>`;
+    const rawContent = terminalData[cmd];
+    const content = typeof rawContent === 'function' ? rawContent() : rawContent;
+
+    if (content) {
+      responseLine.innerHTML = `<pre style="font-family: inherit; margin: 0.35rem 0; white-space: pre-wrap; color: #38bdf8;">${content.trim()}</pre>`;
       if (cmd === 'resume') {
         const link = document.createElement('a');
         link.href = 'assets/docs/Jebin_Joseph_Resume.pdf';

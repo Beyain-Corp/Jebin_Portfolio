@@ -2411,13 +2411,31 @@ code, .font-mono {
   font-weight: 500;
 }
 
+.terminal-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
 .terminal-badge {
   font-size: 0.72rem;
-  padding: 0.18rem 0.55rem;
+  padding: 0.2rem 0.55rem;
   background: rgba(16, 185, 129, 0.18);
   color: #34d399;
   border-radius: 4px;
   font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.terminal-badge.time-badge {
+  background: rgba(56, 189, 248, 0.14);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
 }
 
 .terminal-body {
