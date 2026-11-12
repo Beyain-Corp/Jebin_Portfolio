@@ -4,6 +4,7 @@
    ========================================================================== */
 
 document.addEventListener('DOMContentLoaded', () => {
+  initThemeToggle();
   initMobileNav();
   initActiveNavLink();
   initScrollSpy();
@@ -11,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initSkillsFilter();
   initInteractiveTerminal();
   initArticleReader();
+  initArticleCategoryFilter();
   initResumeModal();
   initContactForm();
   initBackToTop();
@@ -405,250 +407,12 @@ function escapeHtml(string) {
    7. Technical Articles Database & Reader Modal
    -------------------------------------------------------------------------- */
 const articlesDatabase = {
-  'article-test-project': {
-    title: 'Test Project',
-    category: 'Idea & Architecture',
-    readTime: '1 min read',
-    date: 'November 2026',
-    linkedinUrl: 'https://www.linkedin.com/in/jebinjosephj',
-    content: `
-      <p>This technical article is actively being authored in Notion and synced live to your portfolio.</p>
-      <div class="article-callout">
-        <strong>Live Notion Sync:</strong> You can draft paragraphs, architecture diagrams, callouts, and code blocks directly in your Notion workspace. They will automatically sync here!
-      </div>
-    `
-  },
-  'article-vmware-ha': {
-    title: 'Designing Multi-Site VMware ESXi 8.x HA & DRS Clusters for 99.9% Production Uptime',
-    category: 'Virtualization & Compute',
-    readTime: '6 min read',
-    date: 'October 2024',
-    linkedinUrl: 'https://www.linkedin.com/in/jebinjosephj',
-    content: `
-      <p>
-        In modern enterprise infrastructure—especially within high-stakes pharmaceutical manufacturing execution systems (MES), laboratory information management systems (LIMS), and ERP databases—unplanned hypervisor downtime can result in massive financial loss and compliance violations. Achieving and sustaining <strong>99.9% production availability</strong> demands a resilient, deterministic VMware vSphere clustering architecture.
-      </p>
-
-      <div class="article-callout">
-        <strong>Core Engineering Takeaway:</strong> High Availability (HA) is not merely a checkbox setting in vCenter; it is an integrated ecosystem involving physical cabling redundancy, SAN multi-pathing policies, isolated vMotion networks, and carefully calculated admission control policies.
-      </div>
-
-      <h3>1. Hardware Uniformity & N+1 / N+2 Sizing</h3>
-      <p>
-        Building a dependable vSphere cluster starts at physical host provisioning. When architecting multi-host clusters, strive for homogeneous CPU microarchitectures (Intel Xeon Scalable or AMD EPYC) to minimize Enhanced vMotion Compatibility (EVC) overhead and avoid masking critical hypervisor vector extensions.
-      </p>
-      <ul>
-        <li><strong>Host Sizing (N+1 vs N+2):</strong> Calculate memory and compute overhead so that any two physical ESXi blades can fail simultaneously during peak workload without triggering resource starvation or dropping critical VMs.</li>
-        <li><strong>Memory Reservation Policy:</strong> Avoid overcommitting RAM on tier-1 transactional database VMs (such as SQL Server or SAP application servers). Reserve 100% of guest memory to eliminate ballooning and ESXi hypervisor swap contention.</li>
-      </ul>
-
-      <h3>2. vMotion Network Design on Redundant 10GbE SFP+ Fabrics</h3>
-      <p>
-        vMotion traffic spikes can quickly saturate standard 1GbE interfaces, resulting in prolonged migration stun times or failed live migrations during automated host evacuate procedures.
-      </p>
-      <ul>
-        <li><strong>Multi-NIC vMotion:</strong> Provision at least two dedicated 10GbE uplinks per host assigned to separate physical switches. Configure multiple VMkernel ports tagged for vMotion, each bound to an independent active uplink to allow simultaneous round-robin migration streams.</li>
-        <li><strong>Jumbo Frames (MTU 9000):</strong> Enable end-to-end Jumbo Frames across the vSphere Distributed Switch (vDS), physical top-of-rack switches, and storage targets to reduce CPU interrupt overhead during high-volume memory replication.</li>
-      </ul>
-
-      <h3>3. vSphere HA Heartbeat Architecture & Split-Brain Prevention</h3>
-      <p>
-        A frequent failure mode in naive cluster configurations is "split-brain"—where a transient management network partition causes an ESXi host to believe all other nodes are offline while VMs remain running.
-      </p>
-      <ul>
-        <li><strong>Datastore Heartbeats:</strong> vSphere HA relies on datastore heartbeats to discern between a total host failure and an isolated management network link. Always designate at least <strong>two independent shared SAN/iSCSI datastores</strong> accessible by all cluster members as heartbeat targets.</li>
-        <li><strong>Host Isolation Response:</strong> Configure the cluster isolation response to <em>"Power Off and Restart VMs"</em>. Leaving VMs running in an isolated state risks duplicate active instances attempting concurrent writes to shared storage when nodes reconnect.</li>
-      </ul>
-
-      <h3>4. Distributed Resource Scheduler (DRS) & Anti-Affinity Rules</h3>
-      <p>
-        VMware DRS continuously balances CPU and memory distribution across hosts, but uncontrolled migrations during transient load spikes can degrade latency.
-      </p>
-      <ul>
-        <li><strong>DRS Automation Level:</strong> Set DRS to <em>Fully Automated</em> with a moderate migration threshold (Level 3). This avoids "flapping" VM migrations caused by momentary batch processing spikes while maintaining balanced cluster loads.</li>
-        <li><strong>Anti-Affinity Rules:</strong> Explicitly enforce VM-VM Anti-Affinity rules for redundant infrastructure workloads—such as Primary and Secondary Active Directory Domain Controllers, redundant DNS servers, and clustered database instances. Redundant nodes must never be collocated on the same physical ESXi hypervisor.</li>
-      </ul>
-
-      <h3>5. Lifecycle Management (vLCM) & Non-Disruptive Maintenance</h3>
-      <p>
-        With vSphere Lifecycle Manager (vLCM), ESXi host updates, driver packages, and OEM vendor add-ons are managed declaratively using a single cluster image baseline. Utilizing maintenance mode orchestration, DRS systematically evacuates running VMs without dropping a single active network connection, enabling zero-downtime rolling hypervisor patching.
-      </p>
-
-      <div class="article-callout">
-        <strong>Summary:</strong> By pairing redundant 10GbE vMotion fabrics, strict datastore heartbeating, VM anti-affinity rules, and declarative vLCM baseline management, enterprise infrastructure teams can confidently deliver continuous 99.9% availability across production server fleets.
-      </div>
-    `
-  },
-  'article-entra-id': {
-    title: 'Implementing Zero-Trust & Geofenced Conditional Access in Microsoft Entra ID',
-    category: 'Cloud Identity & Security',
-    readTime: '5 min read',
-    date: 'August 2024',
-    linkedinUrl: 'https://www.linkedin.com/in/jebinjosephj',
-    content: `
-      <p>
-        With enterprise workforces operating across corporate campuses, remote branch locations, and mobile endpoints, the traditional perimeter-based security model ("castle and moat") is obsolete. Managing cloud identity for <strong>1,000+ hybrid directory accounts</strong> demands transitioning to a modern <strong>Zero-Trust architecture</strong>: <em>"Never Trust, Always Verify."</em>
-      </p>
-
-      <div class="article-callout">
-        <strong>Zero-Trust Core Principle:</strong> Assume breach. Every authentication request—regardless of whether it originates within the corporate intranet or from an external IP—must undergo explicit verification of identity, device health, location, and session risk.
-      </div>
-
-      <h3>1. Granular Geofencing & Named Locations</h3>
-      <p>
-        The first defense against automated credential stuffing and global brute-force attacks is strict geographic boundary enforcement using Microsoft Entra Named Locations:
-      </p>
-      <ul>
-        <li><strong>Trusted Corporate Egress Locations:</strong> Define IPv4/IPv6 CIDR blocks representing corporate headquarters, branch plants, and enterprise VPN exit nodes as Trusted Named Locations.</li>
-        <li><strong>Explicit Block Policy for High-Risk Countries:</strong> Enforce a top-level Conditional Access block rule denying sign-in attempts originating from countries where the organization maintains no business operations or active employees.</li>
-        <li><strong>Anonymous Proxy & Tor Exit Detection:</strong> Integrate Entra ID Protection to identify and flag sign-ins passing through known anonymous VPNs or commercial proxy networks, immediately prompting for step-up verification or session revocation.</li>
-      </ul>
-
-      <h3>2. Phishing-Resistant Multi-Factor Authentication (MFA)</h3>
-      <p>
-        Legacy MFA methods like SMS and voice phone calls are highly susceptible to SIM-swapping and adversary-in-the-middle (AiTM) reverse-proxy phishing kits.
-      </p>
-      <ul>
-        <li><strong>Microsoft Authenticator Number Matching:</strong> Enforce number matching and geographic context display across all tenant users. This completely eliminates MFA fatigue attacks where adversaries bombard users with approval push notifications.</li>
-        <li><strong>FIDO2 Hardware Keys & Passkeys for Privileged Roles:</strong> Require phishing-resistant FIDO2 security keys (YubiKeys) or Windows Hello for Business for all Global Administrators, Exchange Administrators, and Privileged Role accounts.</li>
-      </ul>
-
-      <h3>3. Device Compliance & Hybrid Azure AD Join</h3>
-      <p>
-        Authenticating identity is only half the battle; the endpoint device requesting access must also be verified as healthy, managed, and compliant with enterprise security standards.
-      </p>
-      <ul>
-        <li><strong>Hybrid Azure AD Join Gate:</strong> In hybrid enterprise networks with on-premises Active Directory Domain Services (AD DS), configure Entra Connect Sync with Hybrid Azure AD Join. Conditional Access policies require devices to be joined to the enterprise domain before accessing sensitive corporate M365 and SharePoint resources.</li>
-        <li><strong>Intune Device Compliance Policies:</strong> Verify that endpoints have BitLocker disk encryption enabled, up-to-date antivirus definitions (SentinelOne / Defender for Endpoint), and unsupported OS builds blocked from completing cloud token issuance.</li>
-      </ul>
-
-      <h3>4. Emergency Break-Glass Account Governance</h3>
-      <p>
-        When configuring stringent Conditional Access policies, organizations must protect against accidental self-lockout scenarios caused by misconfigured rules, federation outages, or third-party MFA disruptions.
-      </p>
-      <ul>
-        <li>Provision exactly two cloud-only emergency accounts (e.g., <code>breakglass-admin-01@domain.onmicrosoft.com</code>) assigned permanent Global Administrator roles.</li>
-        <li>Generate 40+ character cryptographically random passphrases, stored physically in separate fireproof safes.</li>
-        <li>Exclude these accounts from all Conditional Access policies, but configure high-severity Azure Monitor and email/SMS alerts to notify executive IT leadership the moment an emergency account generates a sign-in log.</li>
-      </ul>
-
-      <div class="article-callout">
-        <strong>Summary:</strong> By enforcing geofenced named locations, number-matched MFA, Hybrid Azure AD device compliance, and strict break-glass governance, organizations achieve robust Zero-Trust identity posture across all enterprise systems.
-      </div>
-    `
-  },
-  'article-commvault-dr': {
-    title: 'Disaster Recovery Architecture: Achieving Sub-Hour RPO & 4-Hour RTO with Commvault in GxP Environments',
-    category: 'Storage & Disaster Recovery',
-    readTime: '7 min read',
-    date: 'June 2024',
-    linkedinUrl: 'https://www.linkedin.com/in/jebinjosephj',
-    content: `
-      <p>
-        In highly regulated pharmaceutical manufacturing and enterprise health facilities, data backup and business continuity planning (BCP) are not merely defensive IT measures—they are <strong>legally mandated regulatory obligations</strong> governed by FDA 21 CFR Part 11, EU Annex 11, and good manufacturing practice (GxP) compliance guidelines.
-      </p>
-
-      <div class="article-callout">
-        <strong>Regulatory Baseline:</strong> In a GxP environment, if production data, batch records, or quality control test results are lost or cannot be proven intact with immutable audit trails, entire manufacturing batches face destruction. Reliability is mission-critical.
-      </div>
-
-      <h3>1. Defining Rigorous Recovery Metrics: RPO vs RTO</h3>
-      <p>
-        An enterprise disaster recovery strategy must begin with clear, mathematically validated service level agreements agreed upon by business leadership and systems engineering:
-      </p>
-      <ul>
-        <li><strong>Recovery Point Objective (RPO &lt; 1 Hour):</strong> The maximum tolerable period of transactional data loss. Achieved via continuous storage-level snapshots and hourly transactional log backups for mission-critical SQL and SAP ERP databases.</li>
-        <li><strong>Recovery Time Objective (RTO &lt; 4 Hours):</strong> The total elapsed time from disaster declaration to full system operational restoration at an alternate recovery site or standby ESXi cluster.</li>
-      </ul>
-
-      <h3>2. Commvault MediaAgent Grid & Deduplication Architecture</h3>
-      <p>
-        Ingesting terabytes of backup data across a 24/7 manufacturing facility without degrading network throughput requires a distributed storage architecture:
-      </p>
-      <ul>
-        <li><strong>Distributed MediaAgents:</strong> Localized MediaAgent servers placed adjacent to physical SAN fabrics handle data compression, encryption, and deduplication at the source or media layer, preventing network bottlenecking across core switches.</li>
-        <li><strong>Global Deduplication Storage Pools:</strong> By maintaining a unified deduplication database (DDB) on high-speed NVMe flash, Commvault eliminates redundant block transfers across identical virtual machine OS images and file shares, reducing storage consumption by up to 75%.</li>
-      </ul>
-
-      <h3>3. Immutable Storage, WORM & Air-Gapped Ransomware Defense</h3>
-      <p>
-        Modern ransomware variants actively target backup repositories first, seeking to delete shadow copies and encrypt recovery catalogs before locking primary production storage.
-      </p>
-      <ul>
-        <li><strong>WORM (Write Once, Read Many) Storage Locking:</strong> Backup snapshots are written to hardened Linux target repositories with immutable file locking enabled. Even an administrator account cannot delete or overwrite these recovery sets until the retention timer has elapsed.</li>
-        <li><strong>Air-Gapped Off-Site Replication:</strong> Critical backup copies are asynchronously replicated to an off-site secondary facility via an isolated management network connection, ensuring full survivability against site-wide power loss, physical calamity, or network compromises.</li>
-      </ul>
-
-      <h3>4. GxP Audit Readiness & Validated Non-Disruptive DR Drills</h3>
-      <p>
-        A disaster recovery plan that has never been tested in practice is merely a theoretical document.
-      </p>
-      <ul>
-        <li><strong>Automated Sandbox Restorations:</strong> Utilizing Commvault Live Sync and automated sandbox restore workflows, VMs and databases are restored into an isolated VLAN testbed on a monthly schedule. Automated scripts verify database consistency checks (DBCC CHECKDB) and service startup times without touching live production.</li>
-        <li><strong>Audit Trail Generation:</strong> Commvault generates automated cryptographically verifiable compliance reports recording backup timestamps, media integrity hash comparisons, and restoration audit logs ready for FDA or regulatory auditor submission.</li>
-      </ul>
-
-      <div class="article-callout">
-        <strong>Summary:</strong> Achieving sub-hour RPO and 4-hour RTO in GxP environments requires a disciplined combination of distributed MediaAgents, immutable WORM storage locks, continuous transactional log shipping, and automated non-disruptive disaster drills.
-      </div>
-    `
-  },
-  'article-jenkins-automation': {
-    title: 'Infrastructure Automation: Streamlining Systems Provisioning with Jenkins & Bash Scripting',
-    category: 'Automation & DevOps',
-    readTime: '4 min read',
-    date: 'April 2024',
-    linkedinUrl: 'https://www.linkedin.com/in/jebinjosephj',
-    content: `
-      <p>
-        Traditional system administration is frequently bogged down by repetitive manual workflows: building virtual machines by hand, clicking through wizard dialogs, manually applying security patches, and typing repetitive configuration commands. Applying <strong>DevOps automation principles</strong> to internal enterprise systems transforms error-prone manual runbooks into deterministic, self-documenting pipelines.
-      </p>
-
-      <div class="article-callout">
-        <strong>The SysAdmin Automation Mantra:</strong> If a system configuration task or deployment must be performed more than twice, write a script. If it must be performed across multiple nodes or team members, wire it into a Jenkins pipeline.
-      </div>
-
-      <h3>1. Orchestrating SysAdmin Workflows with Parameterized Jenkins Pipelines</h3>
-      <p>
-        While Jenkins is traditionally associated with software compilation and web app deployment, it serves as an exceptional automation orchestrator for enterprise IT infrastructure:
-      </p>
-      <ul>
-        <li><strong>Self-Service Parameterized Jobs:</strong> Systems engineers can select target node names, OS flavors (Windows Server 2022, Ubuntu 22.04 LTS), network VLAN IDs, and initial CPU/RAM allocations directly from a web UI with built-in role-based access control.</li>
-        <li><strong>Auditability & Role-Based Tracing:</strong> Jenkins records exactly who triggered each provisioning job, what parameters were supplied, and retains the full execution console output for compliance logs.</li>
-      </ul>
-
-      <h3>2. Writing Resilient, Idempotent Shell Scripts</h3>
-      <p>
-        The foundation of reliable infrastructure automation is writing scripts that can run repeatedly without causing unintended side effects (idempotency):
-      </p>
-      <ul>
-        <li><strong>Strict Bash Execution Flags:</strong> Always start Bash automation scripts with <code>set -euo pipefail</code>. This immediately terminates execution if any command fails, prevents unassigned variable bugs, and ensures piped command failures are properly surfaced.</li>
-        <li><strong>Pre-Flight Environment Checks:</strong> Scripts must verify prerequisites—such as available disk space, network gateway reachability, and DNS resolution—before initiating package installations or partition resizing.</li>
-        <li><strong>Modular Configuration Handlers:</strong> Separate logic into distinct functions for hostname assignment, NTP synchronization, firewall rules, and security agent enrollment (SentinelOne, Lansweeper, monitoring agents).</li>
-      </ul>
-
-      <h3>3. Automated Fleet Hardening & Baseline Drift Detection</h3>
-      <p>
-        Beyond initial server provisioning, automated pipelines play a pivotal role in ensuring that running production systems do not deviate from enterprise security standards:
-      </p>
-      <ul>
-        <li><strong>Scheduled CIS Benchmark Scans:</strong> Jenkins triggers automated SSH/WinRM scans checking for unauthorized local administrators, disabled host firewalls, or insecure legacy protocol ciphers (such as SMBv1 or TLS 1.0/1.1).</li>
-        <li><strong>Automated Remediation Hooks:</strong> When minor configuration drift is detected, remediation scripts automatically re-apply standard hardened configuration templates and notify the SysAdmin team via webhook alerts.</li>
-      </ul>
-
-      <h3>4. Measurable Operational Impact</h3>
-      <p>
-        By replacing manual workstation and server setup procedures with automated Jenkins pipeline execution:
-      </p>
-      <ul>
-        <li><strong>Provisioning Turnaround:</strong> Reduced server commissioning time from <strong>4 hours down to under 12 minutes</strong> per instance.</li>
-        <li><strong>Zero Human Error:</strong> Eliminated forgotten firewall rules, mismatched DNS PTR records, or missed security baseline agent installations across the enterprise fleet.</li>
-      </ul>
-
-      <div class="article-callout">
-        <strong>Summary:</strong> Infrastructure automation with Jenkins and robust Bash/PowerShell scripting elevates the SysAdmin role from repetitive fire-fighting to high-leverage architectural engineering.
-      </div>
-    `
+  'article-project24': {
+    title: 'Project24',
+    category: 'Info-Test',
+    readTime: '5mins',
+    date: 'Nov 2026',
+    content: '<p>This is myself Jebin. You can find me near Perumbakkam.</p>'
   }
 };
 
@@ -661,7 +425,6 @@ function initArticleReader() {
   const modalTitle = document.getElementById('articleModalTitle');
   const modalDate = document.getElementById('articleModalDate');
   const modalContent = document.getElementById('articleModalContent');
-  const modalLinkedInBtn = document.getElementById('articleModalLinkedInBtn');
   const modalBody = document.getElementById('articleModalBody');
   const articlesGrid = document.querySelector('.articles-grid');
 
@@ -671,14 +434,11 @@ function initArticleReader() {
     const article = articlesDatabase[articleId];
     if (!article) return;
 
-    if (modalCategory) modalCategory.textContent = article.category;
-    if (modalReadTime) modalReadTime.textContent = article.readTime;
-    if (modalTitle) modalTitle.textContent = article.title;
-    if (modalDate) modalDate.textContent = article.date;
-    if (modalContent) modalContent.innerHTML = article.content;
-    if (modalLinkedInBtn && article.linkedinUrl) {
-      modalLinkedInBtn.href = article.linkedinUrl;
-    }
+    if (modalCategory) modalCategory.textContent = article.category || 'Article';
+    if (modalReadTime) modalReadTime.textContent = article.readTime || '3 min read';
+    if (modalTitle) modalTitle.textContent = article.title || 'Untitled Article';
+    if (modalDate) modalDate.textContent = article.date || '';
+    if (modalContent) modalContent.innerHTML = article.content || '<p>Content being authored in Notion.</p>';
 
     modal.classList.add('active');
     document.body.style.overflow = 'hidden';
@@ -715,7 +475,7 @@ function initArticleReader() {
       return res.json();
     })
     .then(articles => {
-      if (!Array.isArray(articles) || articles.length === 0) return;
+      if (!Array.isArray(articles)) return;
 
       // Update in-memory database
       articles.forEach(art => {
@@ -724,34 +484,75 @@ function initArticleReader() {
 
       // Render fresh cards if articlesGrid exists
       if (articlesGrid) {
-        articlesGrid.innerHTML = articles.map(art => `
-          <article class="article-card">
-            <div class="article-badge-row">
-              <span class="article-category">${escapeHtml(art.category)}</span>
-              <span class="article-read-time"><i class="fa-regular fa-clock"></i> ${escapeHtml(art.readTime)}</span>
+        if (articles.length === 0) {
+          articlesGrid.innerHTML = `
+            <div class="empty-notion-state" style="grid-column: 1 / -1; text-align: center; padding: 3.5rem 1.5rem; background: var(--bg-surface); border: 1px dashed var(--border-subtle); border-radius: var(--radius-md);">
+              <i class="fa-solid fa-feather-pointed" style="font-size: 2.2rem; color: var(--accent-cyan); margin-bottom: 1rem;"></i>
+              <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.5rem;">No Notion Articles Published Yet</h3>
+              <p style="font-size: 0.92rem; color: var(--text-muted); max-width: 500px; margin: 0 auto;">Articles and technical notes published in your Notion workspace will automatically sync here.</p>
             </div>
-            <h3 class="article-title">${escapeHtml(art.title)}</h3>
-            <p class="article-summary">${escapeHtml(art.summary || '')}</p>
-            <div class="article-tags">
-              ${(art.tags || []).map(t => `<span class="article-tag">${escapeHtml(t)}</span>`).join('')}
-            </div>
-            <div class="article-footer">
-              <span class="article-date"><i class="fa-regular fa-calendar"></i> ${escapeHtml(art.date)}</span>
-              <button class="btn-read-article js-open-article" data-article-id="${escapeHtml(art.id)}">
-                <span>Read Insight</span>
-                <i class="fa-solid fa-arrow-right"></i>
-              </button>
-            </div>
-          </article>
-        `).join('');
+          `;
+        } else {
+          articlesGrid.innerHTML = articles.map(art => `
+            <article class="article-card" data-category="${escapeHtml(art.category)}">
+              ${art.coverImage ? `
+              <div class="article-card-cover">
+                <img src="${escapeHtml(art.coverImage)}" alt="${escapeHtml(art.title)}" loading="lazy" decoding="async">
+              </div>` : ''}
+              <div class="article-card-inner">
+                <div class="article-badge-row">
+                  <span class="article-category">${escapeHtml(art.category)}</span>
+                  <span class="article-read-time"><i class="fa-regular fa-clock"></i> ${escapeHtml(art.readTime)}</span>
+                </div>
+                <h3 class="article-title">${escapeHtml(art.title)}</h3>
+                <p class="article-summary">${escapeHtml(art.summary || '')}</p>
+                <div class="article-tags">
+                  ${(art.tags || []).map(t => `<span class="article-tag">${escapeHtml(t)}</span>`).join('')}
+                </div>
+                <div class="article-footer">
+                  <span class="article-date"><i class="fa-regular fa-calendar"></i> ${escapeHtml(art.date)}</span>
+                  <button class="btn-read-article js-open-article" data-article-id="${escapeHtml(art.id)}">
+                    <span>Read Insight</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                  </button>
+                </div>
+              </div>
+            </article>
+          `).join('');
 
-        // Re-attach listeners to dynamic DOM elements
-        attachArticleListeners();
+          // Re-attach listeners to dynamic DOM elements
+          attachArticleListeners();
+          initArticleCategoryFilter();
+        }
       }
     })
     .catch(() => {
       // Gracefully maintain pre-rendered HTML and embedded fallback database
     });
+
+  // Global 1-Click Code Block Copy Handler
+  document.addEventListener('click', (e) => {
+    const copyBtn = e.target.closest('.btn-copy-code');
+    if (copyBtn) {
+      const codeBlock = copyBtn.closest('.article-code-block');
+      const codeEl = codeBlock ? codeBlock.querySelector('code') : null;
+      if (codeEl) {
+        navigator.clipboard.writeText(codeEl.innerText).then(() => {
+          const originalHtml = copyBtn.innerHTML;
+          copyBtn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+          copyBtn.style.background = 'var(--accent-emerald)';
+          copyBtn.style.color = '#ffffff';
+          setTimeout(() => {
+            copyBtn.innerHTML = originalHtml;
+            copyBtn.style.background = '';
+            copyBtn.style.color = '';
+          }, 2000);
+        }).catch(err => {
+          console.error('Clipboard copy error:', err);
+        });
+      }
+    }
+  });
 
   if (closeModalBtn) {
     closeModalBtn.addEventListener('click', closeArticle);
@@ -772,6 +573,102 @@ function initArticleReader() {
       closeArticle();
     }
   });
+}
+
+/* --------------------------------------------------------------------------
+   7b. Dynamic Category Filter for Articles
+   -------------------------------------------------------------------------- */
+function initArticleCategoryFilter() {
+  const filterBar = document.getElementById('articlesFilterBar');
+  const cards = document.querySelectorAll('.article-card');
+  if (!filterBar || cards.length === 0) return;
+
+  const categories = new Set();
+  cards.forEach(card => {
+    const cat = card.getAttribute('data-category');
+    if (cat && cat.trim()) categories.add(cat.trim());
+  });
+
+  if (categories.size === 0) {
+    filterBar.innerHTML = '';
+    return;
+  }
+
+  let filterHtml = `<button class="article-filter-btn active" data-filter="all">All Articles (${cards.length})</button>`;
+  categories.forEach(cat => {
+    const count = Array.from(cards).filter(c => (c.getAttribute('data-category') || '').trim() === cat).length;
+    filterHtml += `<button class="article-filter-btn" data-filter="${escapeHtml(cat)}">${escapeHtml(cat)} (${count})</button>`;
+  });
+  filterBar.innerHTML = filterHtml;
+
+  const buttons = filterBar.querySelectorAll('.article-filter-btn');
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      buttons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const targetCategory = btn.getAttribute('data-filter');
+
+      cards.forEach(card => {
+        const cardCat = (card.getAttribute('data-category') || '').trim();
+        if (targetCategory === 'all' || cardCat === targetCategory) {
+          card.classList.remove('is-hidden');
+        } else {
+          card.classList.add('is-hidden');
+        }
+      });
+    });
+  });
+}
+
+/* --------------------------------------------------------------------------
+   7c. Global Dark / Light Theme Engine
+   -------------------------------------------------------------------------- */
+function initThemeToggle() {
+  const toggleBtn = document.getElementById('themeToggleBtn');
+  const themeIcon = document.getElementById('themeIcon');
+  if (!toggleBtn) return;
+
+  function getPreferredTheme() {
+    const stored = localStorage.getItem('jebin-theme');
+    if (stored) return stored;
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+
+  function applyTheme(theme) {
+    if (theme === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      if (themeIcon) {
+        themeIcon.className = 'fa-solid fa-sun';
+      }
+      toggleBtn.setAttribute('title', 'Switch to Light Mode');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+      if (themeIcon) {
+        themeIcon.className = 'fa-solid fa-moon';
+      }
+      toggleBtn.setAttribute('title', 'Switch to Dark Mode');
+    }
+  }
+
+  // Initial theme application
+  applyTheme(getPreferredTheme());
+
+  // Click toggle
+  toggleBtn.addEventListener('click', () => {
+    const currentTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    applyTheme(newTheme);
+    localStorage.setItem('jebin-theme', newTheme);
+  });
+
+  // OS listener
+  if (window.matchMedia) {
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+      if (!localStorage.getItem('jebin-theme')) {
+        applyTheme(e.matches ? 'dark' : 'light');
+      }
+    });
+  }
 }
 
 /* --------------------------------------------------------------------------

@@ -19,6 +19,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const crypto = require('node:crypto');
 
 // Auto-load .env file if available
 const envPath = path.resolve(__dirname, '../.env');
@@ -34,6 +35,85 @@ let NOTION_API_KEY = process.env.NOTION_API_KEY;
 let NOTION_DATABASE_ID = process.env.NOTION_DATABASE_ID;
 const NOTION_VERSION = '2022-06-28';
 const OUTPUT_FILE = path.resolve(__dirname, '../assets/data/articles.json');
+const IMAGES_DIR = path.resolve(__dirname, '../assets/img/notion');
+
+if (!fs.existsSync(IMAGES_DIR)) {
+  fs.mkdirSync(IMAGES_DIR, { recursive: true });
+}
+
+/**
+ * Downloads and caches Notion/AWS S3 images locally to eliminate buffer time,
+ * provide instant rendering, and avoid signed URL expiration (403 errors).
+ */
+async function downloadAndCacheImage(imageUrl, prefix = 'img') {
+  if (!imageUrl || typeof imageUrl !== 'string') return '';
+  // If already a local path, don't re-download
+  if (imageUrl.startsWith('assets/img/') || imageUrl.startsWith('/assets/img/')) {
+    return imageUrl;
+  }
+  // Only process http / https URLs
+  if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
+    return imageUrl;
+  }
+
+  try {
+    const cleanUrl = imageUrl.split('?')[0];
+    let ext = path.extname(cleanUrl).toLowerCase();
+    if (!['.png', '.jpg', '.jpeg', '.webp', '.svg', '.gif'].includes(ext)) {
+      ext = '.png';
+    }
+    const hash = crypto.createHash('md5').update(cleanUrl).digest('hex').slice(0, 10);
+    const safePrefix = slugify(prefix).slice(0, 30);
+    const filename = `${safePrefix}-${hash}${ext}`;
+    const localFilePath = path.join(IMAGES_DIR, filename);
+    const relativeWebPath = `assets/img/notion/${filename}`;
+
+    const optimizedJpgLocal = localFilePath.replace(/\.[a-z0-9]+$/i, '.jpg');
+    const optimizedJpgRelative = relativeWebPath.replace(/\.[a-z0-9]+$/i, '.jpg');
+
+    // If optimized file already exists and is non-empty, use local cache immediately
+    if (fs.existsSync(optimizedJpgLocal) && fs.statSync(optimizedJpgLocal).size > 0) {
+      return optimizedJpgRelative;
+    }
+    if (fs.existsSync(localFilePath) && fs.statSync(localFilePath).size > 0) {
+      return relativeWebPath;
+    }
+
+    console.log(`    \x1b[36m[OPTIMIZING IMAGE]\x1b[0m Downloading for instant local delivery: ${filename}...`);
+    const res = await fetch(imageUrl);
+    if (!res.ok) {
+      console.warn(`    \x1b[33m[WARN]\x1b[0m Could not download image (${res.status}), falling back to direct URL.`);
+      return imageUrl;
+    }
+
+    const arrayBuffer = await res.arrayBuffer();
+    fs.writeFileSync(localFilePath, Buffer.from(arrayBuffer));
+
+    // Automatically optimize large images (resize to 1200px max & compress) to eliminate web buffering
+    try {
+      const { execSync } = require('node:child_process');
+      execSync(`sips -Z 1200 -s format jpeg -s formatOptions 85 "${localFilePath}" --out "${optimizedJpgLocal}"`, { stdio: 'ignore' });
+      if (fs.existsSync(optimizedJpgLocal) && fs.statSync(optimizedJpgLocal).size > 0) {
+        if (fs.statSync(optimizedJpgLocal).size < fs.statSync(localFilePath).size) {
+          fs.unlinkSync(localFilePath);
+          const kb = Math.round(fs.statSync(optimizedJpgLocal).size / 1024);
+          console.log(`    \x1b[32m[CACHED & COMPRESSED]\x1b[0m Saved to ${optimizedJpgRelative} (${kb} KB)`);
+          return optimizedJpgRelative;
+        } else {
+          fs.unlinkSync(optimizedJpgLocal);
+        }
+      }
+    } catch (e) {
+      // sips not available or failed; keep original downloaded file
+    }
+
+    console.log(`    \x1b[32m[CACHED]\x1b[0m Saved to ${relativeWebPath}`);
+    return relativeWebPath;
+  } catch (err) {
+    console.warn(`    \x1b[33m[WARN]\x1b[0m Failed to cache image: ${err.message}. Using original URL.`);
+    return imageUrl;
+  }
+}
 
 // Check credentials
 if (!NOTION_API_KEY) {
@@ -187,7 +267,7 @@ async function fetchPageBlocks(pageId) {
 /**
  * Converts an array of Notion blocks into clean semantic HTML
  */
-function convertBlocksToHtml(blocks) {
+async function convertBlocksToHtml(blocks, articleSlug = 'article') {
   const htmlParts = [];
   let inBulletedList = false;
   let inNumberedList = false;
@@ -259,8 +339,32 @@ function convertBlocksToHtml(blocks) {
       }
       case 'code': {
         const text = renderRichText(block.code?.rich_text);
-        const language = block.code?.language || '';
-        htmlParts.push(`<pre><code class="language-${escapeHtml(language)}">${text}</code></pre>`);
+        const language = block.code?.language || 'text';
+        htmlParts.push(`
+          <div class="article-code-block">
+            <div class="article-code-header">
+              <span class="article-code-lang"><i class="fa-solid fa-code"></i> ${escapeHtml(language)}</span>
+              <button class="btn-copy-code" type="button" onclick="navigator.clipboard.writeText(this.closest('.article-code-block').querySelector('code').innerText).then(()=>{this.innerHTML='<i class=\\'fa-solid fa-check\\'></i> Copied!';setTimeout(()=>{this.innerHTML='<i class=\\'fa-regular fa-copy\\'></i> Copy'},2000)})">
+                <i class="fa-regular fa-copy"></i> Copy
+              </button>
+            </div>
+            <pre><code class="language-${escapeHtml(language)}">${text}</code></pre>
+          </div>
+        `);
+        break;
+      }
+      case 'image': {
+        const rawImageUrl = block.image?.external?.url || block.image?.file?.url || '';
+        const caption = renderRichText(block.image?.caption);
+        if (rawImageUrl) {
+          const localImageUrl = await downloadAndCacheImage(rawImageUrl, `${articleSlug}-img-${i}`);
+          htmlParts.push(`
+            <figure class="article-image-figure">
+              <img src="${escapeHtml(localImageUrl)}" alt="${escapeHtml(caption || 'Architecture Diagram')}" loading="lazy" decoding="async">
+              ${caption ? `<figcaption>${caption}</figcaption>` : ''}
+            </figure>
+          `);
+        }
         break;
       }
       case 'divider': {
@@ -268,7 +372,7 @@ function convertBlocksToHtml(blocks) {
         break;
       }
       default:
-        // Silently skip unhandled block types (images, bookmarks, etc.) or support text if available
+        // Silently skip unhandled block types
         break;
     }
   }
@@ -354,19 +458,6 @@ async function syncNotionArticles() {
       return null;
     }
 
-    // Check if published (if Published status/select exists)
-    const publishedProp = getProp(['Published', 'Publish', 'Status']);
-    if (publishedProp) {
-      if (publishedProp.type === 'select' && publishedProp.select?.name?.toLowerCase() === 'draft') {
-        console.log(`    \x1b[33m[SKIP]\x1b[0m Skipping explicit draft status: "${title}"`);
-        continue;
-      }
-      if (publishedProp.type === 'status' && publishedProp.status?.name?.toLowerCase() === 'draft') {
-        console.log(`    \x1b[33m[SKIP]\x1b[0m Skipping explicit draft status: "${title}"`);
-        continue;
-      }
-    }
-
     // Title
     const titleProp = getProp(['Title', 'Name', 'Article Title', 'Project name']);
     let title = '';
@@ -384,15 +475,8 @@ async function syncNotionArticles() {
     }
     if (!title) title = 'Engineering Insight';
 
-    // Slug / ID
-    const slugProp = getProp(['Slug', 'ID', 'Id']);
-    let slug = '';
-    if (slugProp?.rich_text && slugProp.rich_text.length > 0) {
-      slug = slugProp.rich_text.map(t => t.plain_text).join('').trim();
-    }
-    if (!slug) {
-      slug = `article-${slugify(title)}`;
-    }
+    // Standard auto-generated slug based on article title
+    const slug = `article-${slugify(title)}`;
 
     // Category
     const categoryProp = getProp(['Category', 'Topic', 'Domain', 'Stage']);
@@ -403,15 +487,34 @@ async function syncNotionArticles() {
       category = categoryProp.multi_select[0].name;
     }
 
-    // Date
+    // Date (Formatted as 'Nov 2026')
     const dateProp = getProp(['Date', 'Published Date', 'Publish Date', 'Timeline']);
     let dateStr = '';
+    const dateOptions = { month: 'short', year: 'numeric' };
     if (dateProp?.date?.start) {
       const d = new Date(dateProp.date.start);
-      dateStr = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      dateStr = d.toLocaleDateString('en-US', dateOptions);
     } else if (page.last_edited_time || page.created_time) {
       const d = new Date(page.last_edited_time || page.created_time);
-      dateStr = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      dateStr = d.toLocaleDateString('en-US', dateOptions);
+    }
+
+    // Cover Image (from page.cover or Cover property)
+    let coverImage = '';
+    if (page.cover?.external?.url) {
+      coverImage = page.cover.external.url;
+    } else if (page.cover?.file?.url) {
+      coverImage = page.cover.file.url;
+    } else {
+      const coverProp = getProp(['Cover', 'Cover Image', 'Image', 'Banner']);
+      if (coverProp?.files && coverProp.files.length > 0) {
+        coverImage = coverProp.files[0].external?.url || coverProp.files[0].file?.url || '';
+      }
+    }
+
+    // Cache cover image locally to eliminate network buffering
+    if (coverImage) {
+      coverImage = await downloadAndCacheImage(coverImage, `${slug}-cover`);
     }
 
     // Tags
@@ -430,7 +533,7 @@ async function syncNotionArticles() {
 
     console.log(` -> Fetching content blocks for: "${title}" (${slug})...`);
     const blocks = await fetchPageBlocks(page.id);
-    const contentHtml = convertBlocksToHtml(blocks);
+    const contentHtml = await convertBlocksToHtml(blocks, slug);
 
     const allText = blocks.map(b => b[b.type]?.rich_text?.map(t => t.plain_text).join('') || '').join(' ').trim();
     const words = allText.split(/\s+/).filter(Boolean).length;
@@ -480,29 +583,14 @@ async function syncNotionArticles() {
       date: dateStr,
       summary: summary,
       tags: tags.length ? tags : [category],
+      coverImage: coverImage,
       linkedinUrl: linkedinUrl,
       content: finalContent
     });
   }
 
-  // Load foundational articles as base
-  const foundationalFile = path.resolve(__dirname, '../assets/data/foundational-articles.json');
-  let foundationalArticles = [];
-  if (fs.existsSync(foundationalFile)) {
-    try {
-      foundationalArticles = JSON.parse(fs.readFileSync(foundationalFile, 'utf8'));
-    } catch (e) {
-      foundationalArticles = [];
-    }
-  }
-
-  // Merge: Place Notion articles FIRST so they appear at the top of the portfolio grid
-  const combinedArticles = [...articles];
-  for (const fArt of foundationalArticles) {
-    if (!combinedArticles.some(a => a.id === fArt.id)) {
-      combinedArticles.push(fArt);
-    }
-  }
+  // User requirement: Show ONLY Notion contents (no static/foundational fallbacks)
+  const finalArticles = [...articles];
 
   // Ensure directory exists
   const dir = path.dirname(OUTPUT_FILE);
@@ -511,8 +599,8 @@ async function syncNotionArticles() {
   }
 
   // Write file
-  fs.writeFileSync(OUTPUT_FILE, JSON.stringify(combinedArticles, null, 2), 'utf8');
-  console.log(`\n\x1b[32m[DONE]\x1b[0m Successfully synced articles! Total published articles: ${combinedArticles.length} (${articles.length} from Notion, ${combinedArticles.length - articles.length} foundational).`);
+  fs.writeFileSync(OUTPUT_FILE, JSON.stringify(finalArticles, null, 2), 'utf8');
+  console.log(`\n\x1b[32m[DONE]\x1b[0m Successfully synced articles! Total Notion articles: ${finalArticles.length}.`);
   console.log(`Saved to: ${OUTPUT_FILE}`);
 
   // Also update index.html pre-rendered cards so changes are visible immediately
@@ -522,34 +610,50 @@ async function syncNotionArticles() {
       let indexHtml = fs.readFileSync(indexHtmlPath, 'utf8');
       const gridRegex = /(<div class="articles-grid">)([\s\S]*?)(<\/div>\s*<!-- Write & Publish on LinkedIn Banner -->)/;
       if (gridRegex.test(indexHtml)) {
-        const cardsHtml = combinedArticles.map(art => `
+        let cardsHtml = '';
+        if (finalArticles.length === 0) {
+          cardsHtml = `
+          <div class="empty-notion-state" style="grid-column: 1 / -1; text-align: center; padding: 3.5rem 1.5rem; background: var(--bg-surface); border: 1px dashed var(--border-subtle); border-radius: var(--radius-md);">
+            <i class="fa-solid fa-feather-pointed" style="font-size: 2.2rem; color: var(--accent-cyan); margin-bottom: 1rem;"></i>
+            <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.5rem;">No Notion Articles Published Yet</h3>
+            <p style="font-size: 0.92rem; color: var(--text-muted); max-width: 500px; margin: 0 auto;">Articles and technical notes published in your Notion workspace will automatically sync here.</p>
+          </div>`;
+        } else {
+          cardsHtml = finalArticles.map(art => `
           <!-- Article: ${escapeHtml(art.title)} -->
-          <article class="article-card">
-            <div class="article-badge-row">
-              <span class="article-category">${escapeHtml(art.category)}</span>
-              <span class="article-read-time"><i class="fa-regular fa-clock"></i> ${escapeHtml(art.readTime)}</span>
-            </div>
-            <h3 class="article-title">
-              ${escapeHtml(art.title)}
-            </h3>
-            <p class="article-summary">
-              ${escapeHtml(art.summary || '')}
-            </p>
-            <div class="article-tags">
-              ${(art.tags || []).map(t => `<span class="article-tag">${escapeHtml(t)}</span>`).join('\n              ')}
-            </div>
-            <div class="article-footer">
-              <span class="article-date"><i class="fa-regular fa-calendar"></i> ${escapeHtml(art.date)}</span>
-              <button class="btn-read-article js-open-article" data-article-id="${escapeHtml(art.id)}">
-                <span>Read Insight</span>
-                <i class="fa-solid fa-arrow-right"></i>
-              </button>
+          <article class="article-card" data-category="${escapeHtml(art.category)}">
+            ${art.coverImage ? `
+            <div class="article-card-cover">
+              <img src="${escapeHtml(art.coverImage)}" alt="${escapeHtml(art.title)}" loading="lazy" decoding="async">
+            </div>` : ''}
+            <div class="article-card-inner">
+              <div class="article-badge-row">
+                <span class="article-category">${escapeHtml(art.category)}</span>
+                <span class="article-read-time"><i class="fa-regular fa-clock"></i> ${escapeHtml(art.readTime)}</span>
+              </div>
+              <h3 class="article-title">
+                ${escapeHtml(art.title)}
+              </h3>
+              <p class="article-summary">
+                ${escapeHtml(art.summary || '')}
+              </p>
+              <div class="article-tags">
+                ${(art.tags || []).map(t => `<span class="article-tag">${escapeHtml(t)}</span>`).join('\n                ')}
+              </div>
+              <div class="article-footer">
+                <span class="article-date"><i class="fa-regular fa-calendar"></i> ${escapeHtml(art.date)}</span>
+                <button class="btn-read-article js-open-article" data-article-id="${escapeHtml(art.id)}">
+                  <span>Read Insight</span>
+                  <i class="fa-solid fa-arrow-right"></i>
+                </button>
+              </div>
             </div>
           </article>`).join('\n');
+        }
 
         indexHtml = indexHtml.replace(gridRegex, `$1\n${cardsHtml}\n        </div>\n\n        <!-- Write & Publish on LinkedIn Banner -->`);
         fs.writeFileSync(indexHtmlPath, indexHtml, 'utf8');
-        console.log(`\x1b[32m[UPDATED]\x1b[0m Pre-rendered articles updated directly in index.html!`);
+        console.log(`\x1b[32m[UPDATED]\x1b[0m Pre-rendered Notion articles updated directly in index.html!`);
       }
     } catch (e) {
       console.warn(`[WARN] Could not update index.html cards:`, e.message);
