@@ -678,10 +678,9 @@ function initArticleCategoryFilter() {
     return;
   }
 
-  let filterHtml = `<button class="article-filter-btn active" data-filter="all">All Articles (${cards.length})</button>`;
+  let filterHtml = `<button class="article-filter-btn active" data-filter="all">All Articles</button>`;
   categories.forEach(cat => {
-    const count = Array.from(cards).filter(c => (c.getAttribute('data-category') || '').trim() === cat).length;
-    filterHtml += `<button class="article-filter-btn" data-filter="${escapeHtml(cat)}">${escapeHtml(cat)} (${count})</button>`;
+    filterHtml += `<button class="article-filter-btn" data-filter="${escapeHtml(cat)}">${escapeHtml(cat)}</button>`;
   });
   filterBar.innerHTML = filterHtml;
 
