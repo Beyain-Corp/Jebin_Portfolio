@@ -1,5 +1,18 @@
 [
   {
+    "id": "article-test-project",
+    "title": "Test Project",
+    "category": "Idea",
+    "readTime": "1 min read",
+    "date": "November 2026",
+    "summary": "Technical architecture and systems engineering analysis synced live from Notion.",
+    "tags": [
+      "Idea"
+    ],
+    "linkedinUrl": "https://www.linkedin.com/in/jebinjosephj",
+    "content": "\n        <p>This technical article is actively being authored in Notion and synced live to your portfolio.</p>\n        <div class=\"article-callout\">\n          <strong>Live Notion Sync:</strong> You can draft paragraphs, architecture diagrams, callouts, and code blocks directly in your Notion workspace. They will automatically sync here!\n        </div>\n      "
+  },
+  {
     "id": "article-vmware-ha",
     "title": "Designing Multi-Site VMware ESXi 8.x HA & DRS Clusters for 99.9% Production Uptime",
     "category": "Virtualization & Compute",

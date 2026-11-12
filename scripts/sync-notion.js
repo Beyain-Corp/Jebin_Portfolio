@@ -354,16 +354,15 @@ async function syncNotionArticles() {
       return null;
     }
 
-    // Check if published (if Published checkbox exists)
+    // Check if published (if Published status/select exists)
     const publishedProp = getProp(['Published', 'Publish', 'Status']);
     if (publishedProp) {
-      if (publishedProp.type === 'checkbox' && publishedProp.checkbox === false) {
-        continue; // skip unpublished
-      }
       if (publishedProp.type === 'select' && publishedProp.select?.name?.toLowerCase() === 'draft') {
+        console.log(`    \x1b[33m[SKIP]\x1b[0m Skipping explicit draft status: "${title}"`);
         continue;
       }
       if (publishedProp.type === 'status' && publishedProp.status?.name?.toLowerCase() === 'draft') {
+        console.log(`    \x1b[33m[SKIP]\x1b[0m Skipping explicit draft status: "${title}"`);
         continue;
       }
     }
@@ -436,14 +435,15 @@ async function syncNotionArticles() {
     const allText = blocks.map(b => b[b.type]?.rich_text?.map(t => t.plain_text).join('') || '').join(' ').trim();
     const words = allText.split(/\s+/).filter(Boolean).length;
 
-    // Check if published or has sufficient content
-    const isExplicitlyPublished = (publishedProp?.type === 'checkbox' && publishedProp?.checkbox === true) ||
-                                  (publishedProp?.type === 'status' && publishedProp?.status?.name?.toLowerCase() === 'published') ||
-                                  (publishedProp?.type === 'select' && publishedProp?.select?.name?.toLowerCase() === 'published');
-
-    if (!isExplicitlyPublished && words < 10) {
-      console.log(`    \x1b[33m[SKIP]\x1b[0m Skipping empty draft: "${title}" (${words} words). Add text or check "Published" in Notion to publish.`);
-      continue;
+    // Content & summary fallback for drafts
+    let finalContent = contentHtml;
+    if (!finalContent || words < 5) {
+      finalContent = `
+        <p>This technical article is actively being authored in Notion and synced live to your portfolio.</p>
+        <div class="article-callout">
+          <strong>Live Notion Sync:</strong> You can draft paragraphs, architecture diagrams, callouts, and code blocks directly in your Notion workspace. They will automatically sync here!
+        </div>
+      `;
     }
 
     // Summary (from property or derived from first block)
@@ -458,7 +458,7 @@ async function syncNotionArticles() {
       if (firstPara) {
         summary = firstPara.paragraph.rich_text.map(t => t.plain_text).join('').trim().slice(0, 180) + '...';
       } else {
-        summary = 'Technical infrastructure analysis and engineering insights.';
+        summary = 'Technical architecture and systems engineering analysis synced live from Notion.';
       }
     }
 
@@ -469,7 +469,7 @@ async function syncNotionArticles() {
       readTime = readTimeProp.rich_text.map(t => t.plain_text).join('').trim();
     }
     if (!readTime) {
-      readTime = `${Math.max(1, Math.ceil(words / 200))} min read`;
+      readTime = `${Math.max(1, Math.ceil(Math.max(words, 150) / 200))} min read`;
     }
 
     articles.push({
@@ -481,28 +481,26 @@ async function syncNotionArticles() {
       summary: summary,
       tags: tags.length ? tags : [category],
       linkedinUrl: linkedinUrl,
-      content: contentHtml || `<p>Article content being drafted in Notion.</p>`
+      content: finalContent
     });
   }
 
   // Load foundational articles as base
   const foundationalFile = path.resolve(__dirname, '../assets/data/foundational-articles.json');
-  let combinedArticles = [];
+  let foundationalArticles = [];
   if (fs.existsSync(foundationalFile)) {
     try {
-      combinedArticles = JSON.parse(fs.readFileSync(foundationalFile, 'utf8'));
+      foundationalArticles = JSON.parse(fs.readFileSync(foundationalFile, 'utf8'));
     } catch (e) {
-      combinedArticles = [];
+      foundationalArticles = [];
     }
   }
 
-  // Merge Notion articles into foundational base
-  for (const nArt of articles) {
-    const existingIdx = combinedArticles.findIndex(a => a.id === nArt.id);
-    if (existingIdx >= 0) {
-      combinedArticles[existingIdx] = nArt;
-    } else {
-      combinedArticles.push(nArt);
+  // Merge: Place Notion articles FIRST so they appear at the top of the portfolio grid
+  const combinedArticles = [...articles];
+  for (const fArt of foundationalArticles) {
+    if (!combinedArticles.some(a => a.id === fArt.id)) {
+      combinedArticles.push(fArt);
     }
   }
 
@@ -516,6 +514,47 @@ async function syncNotionArticles() {
   fs.writeFileSync(OUTPUT_FILE, JSON.stringify(combinedArticles, null, 2), 'utf8');
   console.log(`\n\x1b[32m[DONE]\x1b[0m Successfully synced articles! Total published articles: ${combinedArticles.length} (${articles.length} from Notion, ${combinedArticles.length - articles.length} foundational).`);
   console.log(`Saved to: ${OUTPUT_FILE}`);
+
+  // Also update index.html pre-rendered cards so changes are visible immediately
+  const indexHtmlPath = path.resolve(__dirname, '../index.html');
+  if (fs.existsSync(indexHtmlPath)) {
+    try {
+      let indexHtml = fs.readFileSync(indexHtmlPath, 'utf8');
+      const gridRegex = /(<div class="articles-grid">)([\s\S]*?)(<\/div>\s*<!-- Write & Publish on LinkedIn Banner -->)/;
+      if (gridRegex.test(indexHtml)) {
+        const cardsHtml = combinedArticles.map(art => `
+          <!-- Article: ${escapeHtml(art.title)} -->
+          <article class="article-card">
+            <div class="article-badge-row">
+              <span class="article-category">${escapeHtml(art.category)}</span>
+              <span class="article-read-time"><i class="fa-regular fa-clock"></i> ${escapeHtml(art.readTime)}</span>
+            </div>
+            <h3 class="article-title">
+              ${escapeHtml(art.title)}
+            </h3>
+            <p class="article-summary">
+              ${escapeHtml(art.summary || '')}
+            </p>
+            <div class="article-tags">
+              ${(art.tags || []).map(t => `<span class="article-tag">${escapeHtml(t)}</span>`).join('\n              ')}
+            </div>
+            <div class="article-footer">
+              <span class="article-date"><i class="fa-regular fa-calendar"></i> ${escapeHtml(art.date)}</span>
+              <button class="btn-read-article js-open-article" data-article-id="${escapeHtml(art.id)}">
+                <span>Read Insight</span>
+                <i class="fa-solid fa-arrow-right"></i>
+              </button>
+            </div>
+          </article>`).join('\n');
+
+        indexHtml = indexHtml.replace(gridRegex, `$1\n${cardsHtml}\n        </div>\n\n        <!-- Write & Publish on LinkedIn Banner -->`);
+        fs.writeFileSync(indexHtmlPath, indexHtml, 'utf8');
+        console.log(`\x1b[32m[UPDATED]\x1b[0m Pre-rendered articles updated directly in index.html!`);
+      }
+    } catch (e) {
+      console.warn(`[WARN] Could not update index.html cards:`, e.message);
+    }
+  }
 }
 
 syncNotionArticles().catch(err => {

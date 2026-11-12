@@ -405,6 +405,19 @@ function escapeHtml(string) {
    7. Technical Articles Database & Reader Modal
    -------------------------------------------------------------------------- */
 const articlesDatabase = {
+  'article-test-project': {
+    title: 'Test Project',
+    category: 'Idea & Architecture',
+    readTime: '1 min read',
+    date: 'November 2026',
+    linkedinUrl: 'https://www.linkedin.com/in/jebinjosephj',
+    content: `
+      <p>This technical article is actively being authored in Notion and synced live to your portfolio.</p>
+      <div class="article-callout">
+        <strong>Live Notion Sync:</strong> You can draft paragraphs, architecture diagrams, callouts, and code blocks directly in your Notion workspace. They will automatically sync here!
+      </div>
+    `
+  },
   'article-vmware-ha': {
     title: 'Designing Multi-Site VMware ESXi 8.x HA & DRS Clusters for 99.9% Production Uptime',
     category: 'Virtualization & Compute',

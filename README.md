@@ -102,7 +102,7 @@ The portfolio is structured as a cohesive, high-performance Single Page Applicat
 
 ## 🚀 How to Run Locally
 
-You can open the website immediately in any web browser:
+You can open the website immediately in any web browser: (https://beyain-corp.github.io/Jebin_Portfolio/)
 
 ### Option 1: Direct File
 Double-click `index.html` or open it directly in Google Chrome, Safari, or Microsoft Edge:
