@@ -6,7 +6,7 @@ on:
 
   # Automated sync every 15 minutes
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: '*/2 * * * *'
 
 permissions:
   contents: write
