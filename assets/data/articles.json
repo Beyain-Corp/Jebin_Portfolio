@@ -2,7 +2,7 @@
   {
     "id": "article-configure-active-directory-in-windows-server-2025",
     "title": "Configure Active Directory in Windows Server 2025",
-    "category": "Active Directory in Windows Server 2025",
+    "category": "Active Directory",
     "readTime": "5 Minutes",
     "date": "Nov 2026",
     "summary": "Active Directory Domain Services (AD DS) is the central authority for identity, authentication, and security policies in a Windows environment. In Windows Server 2025, establishing a Domain Controller remains a strict two-phase process: first, installing the AD DS server role, and second, promoting the server to act as a Domain Controller.",

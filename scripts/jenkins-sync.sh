@@ -42,3 +42,4 @@ if ! git diff --staged --quiet; then
 else
     echo "[INFO] No changes detected. Portfolio is already up to date with Notion."
 fi
+
