@@ -1,19 +1,5 @@
 [
   {
-    "id": "article-no-public",
-    "title": "No-public",
-    "category": "Test Project",
-    "readTime": "1 Mins",
-    "date": "Nov 2026",
-    "summary": "Test Summary",
-    "tags": [
-      "Test"
-    ],
-    "coverImage": "assets/img/notion/article-no-public-cover-8b82444f3e.jpg",
-    "linkedinUrl": "https://www.linkedin.com/in/jebinjosephj",
-    "content": "\n        <p>This technical article is actively being authored in Notion and synced live to your portfolio.</p>\n        <div class=\"article-callout\">\n          <strong>Live Notion Sync:</strong> You can draft paragraphs, architecture diagrams, callouts, and code blocks directly in your Notion workspace. They will automatically sync here!\n        </div>\n      "
-  },
-  {
     "id": "article-configure-active-directory-in-windows-server-2025",
     "title": "Configure Active Directory in Windows Server 2025",
     "category": "Active Directory",
