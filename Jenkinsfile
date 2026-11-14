@@ -1,7 +1,7 @@
 pipeline {
     agent any
 
-    // Run automatically every 15 minutes
+    // Run automatically every 2 minutes
     triggers {
         cron('H/2 * * * *')
     }
