@@ -2,30 +2,118 @@
 
 /**
  * ============================================================================
- * Notion to Portfolio Static Sync Engine
+ * Notion to Portfolio Static Sync Engine (Universal Node.js 12+ Compatible)
  * Jebin Joseph J. - Enterprise IT Infrastructure Portfolio
  * ============================================================================
  * 
  * Fetches articles and engineering notes from a Notion Database via the official
  * Notion API (v2022-06-28) and compiles them into `assets/data/articles.json`.
  * 
- * Requirements:
- *   - Node.js 18+ (uses native global fetch)
- *   - Environment Variables:
- *       NOTION_API_KEY      (Internal Integration Secret, e.g. secret_xxxx)
- *       NOTION_DATABASE_ID  (32-character Notion Database ID)
+ * Compatibility:
+ *   - Compatible with Node.js v12.x, v14.x, v16.x, v18.x, v20.x, v22.x
+ *   - Pure native built-ins: fs, path, crypto, https, http, url, child_process
+ *   - Zero optional chaining (?.) so it runs on legacy Node environments
  * ============================================================================
  */
 
-const fs = require('node:fs');
-const path = require('node:path');
-const crypto = require('node:crypto');
+const fs = require('fs');
+const path = require('path');
+const crypto = require('crypto');
+const https = require('https');
+const http = require('http');
+const { URL } = require('url');
 
-// Auto-load .env file if available
+// --- Universal fetch polyfill for Node.js < 18 ---
+if (typeof globalThis.fetch !== 'function') {
+  globalThis.fetch = function (input, init) {
+    init = init || {};
+    return new Promise(function (resolve, reject) {
+      try {
+        const parsedUrl = new URL(input);
+        const isHttps = parsedUrl.protocol === 'https:';
+        const transport = isHttps ? https : http;
+
+        const headers = Object.assign({}, init.headers || {});
+        const method = (init.method || 'GET').toUpperCase();
+
+        let bodyData = null;
+        if (init.body) {
+          if (typeof init.body === 'string') {
+            bodyData = Buffer.from(init.body);
+          } else if (Buffer.isBuffer(init.body)) {
+            bodyData = init.body;
+          } else {
+            bodyData = Buffer.from(String(init.body));
+          }
+          if (!headers['Content-Length'] && !headers['content-length']) {
+            headers['Content-Length'] = bodyData.length;
+          }
+        }
+
+        const reqOptions = {
+          protocol: parsedUrl.protocol,
+          hostname: parsedUrl.hostname,
+          port: parsedUrl.port || (isHttps ? 443 : 80),
+          path: parsedUrl.pathname + parsedUrl.search,
+          method: method,
+          headers: headers
+        };
+
+        const req = transport.request(reqOptions, function (res) {
+          // Handle HTTP redirects (301, 302, 307, 308)
+          if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+            const nextUrl = new URL(res.headers.location, parsedUrl).href;
+            return resolve(globalThis.fetch(nextUrl, init));
+          }
+
+          const chunks = [];
+          res.on('data', function (chunk) { chunks.push(chunk); });
+          res.on('end', function () {
+            const buffer = Buffer.concat(chunks);
+            resolve({
+              ok: res.statusCode >= 200 && res.statusCode < 300,
+              status: res.statusCode,
+              statusText: res.statusMessage || '',
+              headers: res.headers,
+              text: async function () { return buffer.toString('utf8'); },
+              json: async function () { return JSON.parse(buffer.toString('utf8')); },
+              arrayBuffer: async function () {
+                return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
+              }
+            });
+          });
+        });
+
+        req.on('error', reject);
+        if (bodyData) {
+          req.write(bodyData);
+        }
+        req.end();
+      } catch (err) {
+        reject(err);
+      }
+    });
+  };
+}
+
+// Auto-load .env file if available (custom cross-version parser)
 const envPath = path.resolve(__dirname, '../.env');
-if (fs.existsSync(envPath) && typeof process.loadEnvFile === 'function') {
+if (fs.existsSync(envPath)) {
   try {
-    process.loadEnvFile(envPath);
+    const envContent = fs.readFileSync(envPath, 'utf8');
+    envContent.split('\n').forEach(function (line) {
+      const trimmed = line.trim();
+      if (trimmed && !trimmed.startsWith('#')) {
+        const match = trimmed.match(/^([^=]+)=(.*)$/);
+        if (match) {
+          const k = match[1].trim();
+          const v = match[2].trim().replace(/^['"](.*)['"]$/, '$1');
+          if (!process.env[k]) {
+            process.env[k] = v;
+          }
+        }
+      }
+    });
   } catch (e) {
     // ignore
   }
@@ -45,7 +133,8 @@ if (!fs.existsSync(IMAGES_DIR)) {
  * Downloads and caches Notion/AWS S3 images locally to eliminate buffer time,
  * provide instant rendering, and avoid signed URL expiration (403 errors).
  */
-async function downloadAndCacheImage(imageUrl, prefix = 'img') {
+async function downloadAndCacheImage(imageUrl, prefix) {
+  prefix = prefix || 'img';
   if (!imageUrl || typeof imageUrl !== 'string') return '';
   // If already a local path, don't re-download
   if (imageUrl.startsWith('assets/img/') || imageUrl.startsWith('/assets/img/')) {
@@ -91,23 +180,23 @@ async function downloadAndCacheImage(imageUrl, prefix = 'img') {
 
     // Automatically optimize large images (resize to 1200px max & compress) to eliminate web buffering
     try {
-      const { execSync } = require('node:child_process');
+      const { execSync } = require('child_process');
       let compressed = false;
       // 1. macOS native: sips
       try {
         execSync(`sips -Z 1200 -s format jpeg -s formatOptions 85 "${localFilePath}" --out "${optimizedJpgLocal}"`, { stdio: 'ignore' });
         compressed = true;
-      } catch {
+      } catch (errMac) {
         // 2. Linux native: ffmpeg
         try {
           execSync(`ffmpeg -y -v error -i "${localFilePath}" -vf "scale='min(1200,iw)':-1" -q:v 3 "${optimizedJpgLocal}"`, { stdio: 'ignore' });
           compressed = true;
-        } catch {
+        } catch (errFfmpeg) {
           // 3. Linux native: ImageMagick convert
           try {
             execSync(`convert "${localFilePath}" -resize "1200x>" -quality 85 "${optimizedJpgLocal}"`, { stdio: 'ignore' });
             compressed = true;
-          } catch {
+          } catch (errConvert) {
             compressed = false;
           }
         }
@@ -155,16 +244,16 @@ function cleanDatabaseId(id) {
 /**
  * Helper to make authenticated Notion API requests
  */
-async function notionRequest(endpoint, options = {}) {
+async function notionRequest(endpoint, options) {
+  options = options || {};
   const url = `https://api.notion.com/v1/${endpoint}`;
   const response = await fetch(url, {
     method: options.method || 'GET',
-    headers: {
+    headers: Object.assign({
       'Authorization': `Bearer ${NOTION_API_KEY}`,
       'Notion-Version': NOTION_VERSION,
-      'Content-Type': 'application/json',
-      ...options.headers
-    },
+      'Content-Type': 'application/json'
+    }, options.headers || {}),
     body: options.body ? JSON.stringify(options.body) : undefined
   });
 
@@ -179,7 +268,8 @@ async function notionRequest(endpoint, options = {}) {
 /**
  * Auto-detect database or shared pages if NOTION_DATABASE_ID is not provided or invalid
  */
-async function resolveNotionTargets(forceAutoDetect = false) {
+async function resolveNotionTargets(forceAutoDetect) {
+  forceAutoDetect = Boolean(forceAutoDetect);
   if (!forceAutoDetect && NOTION_DATABASE_ID) {
     const cleaned = cleanDatabaseId(NOTION_DATABASE_ID);
     return { type: 'database', id: cleaned };
@@ -198,7 +288,10 @@ async function resolveNotionTargets(forceAutoDetect = false) {
   const databases = dbSearch.results || [];
   if (databases.length > 0) {
     const selectedDb = databases[0];
-    const dbTitle = selectedDb.title?.map(t => t.plain_text).join('') || 'Articles Database';
+    let dbTitle = 'Articles Database';
+    if (selectedDb.title && Array.isArray(selectedDb.title) && selectedDb.title.length > 0) {
+      dbTitle = selectedDb.title.map(function (t) { return t.plain_text; }).join('').trim() || 'Articles Database';
+    }
     const dbId = cleanDatabaseId(selectedDb.id);
     console.log(`\x1b[32m[SUCCESS]\x1b[0m Found Notion Database: "${dbTitle}" (ID: ${dbId})`);
     return { type: 'database', id: dbId, title: dbTitle };
@@ -226,10 +319,11 @@ async function resolveNotionTargets(forceAutoDetect = false) {
 /**
  * Converts Notion rich_text array to styled HTML string
  */
-function renderRichText(richTextArray = []) {
+function renderRichText(richTextArray) {
+  richTextArray = richTextArray || [];
   if (!Array.isArray(richTextArray)) return '';
 
-  return richTextArray.map(item => {
+  return richTextArray.map(function (item) {
     let text = escapeHtml(item.plain_text || '');
 
     if (item.annotations) {
@@ -276,7 +370,7 @@ async function fetchPageBlocks(pageId) {
   while (true) {
     const query = cursor ? `?page_size=100&start_cursor=${cursor}` : '?page_size=100';
     const data = await notionRequest(`blocks/${pageId}/children${query}`);
-    blocks.push(...(data.results || []));
+    blocks.push.apply(blocks, data.results || []);
     if (!data.has_more) break;
     cursor = data.next_cursor;
   }
@@ -287,7 +381,8 @@ async function fetchPageBlocks(pageId) {
 /**
  * Converts an array of Notion blocks into clean semantic HTML
  */
-async function convertBlocksToHtml(blocks, articleSlug = 'article') {
+async function convertBlocksToHtml(blocks, articleSlug) {
+  articleSlug = articleSlug || 'article';
   const htmlParts = [];
   let inBulletedList = false;
   let inNumberedList = false;
@@ -308,24 +403,24 @@ async function convertBlocksToHtml(blocks, articleSlug = 'article') {
 
     switch (type) {
       case 'paragraph': {
-        const text = renderRichText(block.paragraph?.rich_text);
+        const text = renderRichText(block.paragraph ? block.paragraph.rich_text : null);
         if (text) {
           htmlParts.push(`<p>${text}</p>`);
         }
         break;
       }
       case 'heading_1': {
-        const text = renderRichText(block.heading_1?.rich_text);
+        const text = renderRichText(block.heading_1 ? block.heading_1.rich_text : null);
         htmlParts.push(`<h3>${text}</h3>`);
         break;
       }
       case 'heading_2': {
-        const text = renderRichText(block.heading_2?.rich_text);
+        const text = renderRichText(block.heading_2 ? block.heading_2.rich_text : null);
         htmlParts.push(`<h3>${text}</h3>`);
         break;
       }
       case 'heading_3': {
-        const text = renderRichText(block.heading_3?.rich_text);
+        const text = renderRichText(block.heading_3 ? block.heading_3.rich_text : null);
         htmlParts.push(`<h4>${text}</h4>`);
         break;
       }
@@ -334,7 +429,7 @@ async function convertBlocksToHtml(blocks, articleSlug = 'article') {
           htmlParts.push('<ul>');
           inBulletedList = true;
         }
-        const text = renderRichText(block.bulleted_list_item?.rich_text);
+        const text = renderRichText(block.bulleted_list_item ? block.bulleted_list_item.rich_text : null);
         htmlParts.push(`<li>${text}</li>`);
         break;
       }
@@ -343,23 +438,24 @@ async function convertBlocksToHtml(blocks, articleSlug = 'article') {
           htmlParts.push('<ol>');
           inNumberedList = true;
         }
-        const text = renderRichText(block.numbered_list_item?.rich_text);
+        const text = renderRichText(block.numbered_list_item ? block.numbered_list_item.rich_text : null);
         htmlParts.push(`<li>${text}</li>`);
         break;
       }
       case 'callout': {
-        const text = renderRichText(block.callout?.rich_text);
+        const text = renderRichText(block.callout ? block.callout.rich_text : null);
         htmlParts.push(`<div class="article-callout">${text}</div>`);
         break;
       }
       case 'quote': {
-        const text = renderRichText(block.quote?.rich_text);
+        const text = renderRichText(block.quote ? block.quote.rich_text : null);
         htmlParts.push(`<blockquote>${text}</blockquote>`);
         break;
       }
       case 'code': {
-        const text = renderRichText(block.code?.rich_text);
-        const language = block.code?.language || 'text';
+        const codeObj = block.code || {};
+        const text = renderRichText(codeObj.rich_text);
+        const language = codeObj.language || 'text';
         htmlParts.push(`
           <div class="article-code-block">
             <div class="article-code-header">
@@ -374,13 +470,16 @@ async function convertBlocksToHtml(blocks, articleSlug = 'article') {
         break;
       }
       case 'image': {
-        const rawImageUrl = block.image?.external?.url || block.image?.file?.url || '';
-        const caption = renderRichText(block.image?.caption);
+        const imgObj = block.image || {};
+        const extUrl = (imgObj.external && imgObj.external.url) || '';
+        const fileUrl = (imgObj.file && imgObj.file.url) || '';
+        const rawImageUrl = extUrl || fileUrl || '';
+        const caption = renderRichText(imgObj.caption);
         if (rawImageUrl) {
           const localImageUrl = await downloadAndCacheImage(rawImageUrl, `${articleSlug}-img-${i}`);
           htmlParts.push(`
-            <figure class="article-image-figure">
-              <img src="${escapeHtml(localImageUrl)}" alt="${escapeHtml(caption || 'Architecture Diagram')}" loading="lazy" decoding="async">
+            <figure class="article-image">
+              <img src="${escapeHtml(localImageUrl)}" alt="${escapeHtml(caption || 'Technical illustration')}" loading="lazy" decoding="async">
               ${caption ? `<figcaption>${caption}</figcaption>` : ''}
             </figure>
           `);
@@ -392,7 +491,6 @@ async function convertBlocksToHtml(blocks, articleSlug = 'article') {
         break;
       }
       default:
-        // Silently skip unhandled block types
         break;
     }
   }
@@ -436,9 +534,9 @@ async function syncNotionArticles() {
       });
       pages = responseData.results || [];
     } catch (err) {
-      if (err.message.includes('404') || err.message.includes('object_not_found')) {
+      if (err.message.indexOf('404') !== -1 || err.message.indexOf('object_not_found') !== -1) {
         console.warn(`\x1b[33m[WARN]\x1b[0m Could not access database ID "${target.id}" (Notion 404 Not Found).`);
-        console.warn(`       Reason: The database itself is not shared with integration "Jebin's Portfoilo" or ID is a view ID.`);
+        console.warn(`       Reason: The database itself is not shared with integration or ID is a view ID.`);
         console.log(`\x1b[36m[INFO]\x1b[0m Falling back to auto-discovering all shared pages & databases...`);
 
         const fallbackTarget = await resolveNotionTargets(true);
@@ -452,7 +550,7 @@ async function syncNotionArticles() {
           pages = fallbackTarget.pages || [];
         }
       } else {
-        // If sorting by "Date" failed because property name differs, try without sorts
+        // If sorting or filtering failed (e.g. property name differs), try basic query
         try {
           responseData = await notionRequest(`databases/${target.id}/query`, {
             method: 'POST',
@@ -478,7 +576,8 @@ async function syncNotionArticles() {
 
     // Helper to find property value regardless of slight naming differences
     function getProp(names) {
-      for (const name of names) {
+      for (let n = 0; n < names.length; n++) {
+        const name = names[n];
         if (props[name]) return props[name];
       }
       return null;
@@ -487,14 +586,17 @@ async function syncNotionArticles() {
     // Title
     const titleProp = getProp(['Title', 'Name', 'Article Title', 'Project name']);
     let title = '';
-    if (titleProp?.title && titleProp.title.length > 0) {
-      title = titleProp.title.map(t => t.plain_text).join('').trim();
+    if (titleProp && titleProp.title && titleProp.title.length > 0) {
+      title = titleProp.title.map(function (t) { return t.plain_text; }).join('').trim();
     }
     if (!title && page.properties) {
       // Look for any property of type title
-      for (const key of Object.keys(page.properties)) {
-        if (page.properties[key]?.type === 'title') {
-          title = page.properties[key].title?.map(t => t.plain_text).join('').trim();
+      const propKeys = Object.keys(page.properties);
+      for (let k = 0; k < propKeys.length; k++) {
+        const propKey = propKeys[k];
+        const p = page.properties[propKey];
+        if (p && p.type === 'title' && p.title && p.title.length > 0) {
+          title = p.title.map(function (t) { return t.plain_text; }).join('').trim();
           break;
         }
       }
@@ -509,12 +611,12 @@ async function syncNotionArticles() {
         console.log(` -> \x1b[33m[SKIPPED DRAFT]\x1b[0m "${title}" (Published checkbox is unchecked in Notion)`);
         continue;
       }
-      if (publishedProp.type === 'status' && publishedProp.status?.name?.toLowerCase() !== 'published') {
-        console.log(` -> \x1b[33m[SKIPPED DRAFT]\x1b[0m "${title}" (Status is ${publishedProp.status?.name})`);
+      if (publishedProp.type === 'status' && publishedProp.status && publishedProp.status.name && publishedProp.status.name.toLowerCase() !== 'published') {
+        console.log(` -> \x1b[33m[SKIPPED DRAFT]\x1b[0m "${title}" (Status is ${publishedProp.status.name})`);
         continue;
       }
-      if (publishedProp.type === 'select' && publishedProp.select?.name?.toLowerCase() !== 'published') {
-        console.log(` -> \x1b[33m[SKIPPED DRAFT]\x1b[0m "${title}" (Status is ${publishedProp.select?.name})`);
+      if (publishedProp.type === 'select' && publishedProp.select && publishedProp.select.name && publishedProp.select.name.toLowerCase() !== 'published') {
+        console.log(` -> \x1b[33m[SKIPPED DRAFT]\x1b[0m "${title}" (Status is ${publishedProp.select.name})`);
         continue;
       }
     }
@@ -525,9 +627,9 @@ async function syncNotionArticles() {
     // Category
     const categoryProp = getProp(['Category', 'Topic', 'Domain', 'Stage']);
     let category = 'Engineering Insight';
-    if (categoryProp?.select?.name) {
+    if (categoryProp && categoryProp.select && categoryProp.select.name) {
       category = categoryProp.select.name;
-    } else if (categoryProp?.multi_select?.[0]?.name) {
+    } else if (categoryProp && categoryProp.multi_select && categoryProp.multi_select[0] && categoryProp.multi_select[0].name) {
       category = categoryProp.multi_select[0].name;
     }
 
@@ -535,7 +637,7 @@ async function syncNotionArticles() {
     const dateProp = getProp(['Date', 'Published Date', 'Publish Date', 'Timeline']);
     let dateStr = '';
     const dateOptions = { month: 'short', year: 'numeric' };
-    if (dateProp?.date?.start) {
+    if (dateProp && dateProp.date && dateProp.date.start) {
       const d = new Date(dateProp.date.start);
       dateStr = d.toLocaleDateString('en-US', dateOptions);
     } else if (page.last_edited_time || page.created_time) {
@@ -545,14 +647,15 @@ async function syncNotionArticles() {
 
     // Cover Image (from page.cover or Cover property)
     let coverImage = '';
-    if (page.cover?.external?.url) {
+    if (page.cover && page.cover.external && page.cover.external.url) {
       coverImage = page.cover.external.url;
-    } else if (page.cover?.file?.url) {
+    } else if (page.cover && page.cover.file && page.cover.file.url) {
       coverImage = page.cover.file.url;
     } else {
       const coverProp = getProp(['Cover', 'Cover Image', 'Image', 'Banner']);
-      if (coverProp?.files && coverProp.files.length > 0) {
-        coverImage = coverProp.files[0].external?.url || coverProp.files[0].file?.url || '';
+      if (coverProp && coverProp.files && coverProp.files.length > 0) {
+        const firstFile = coverProp.files[0];
+        coverImage = (firstFile.external && firstFile.external.url) || (firstFile.file && firstFile.file.url) || '';
       }
     }
 
@@ -564,14 +667,14 @@ async function syncNotionArticles() {
     // Tags
     const tagsProp = getProp(['Tags', 'Skills', 'Keywords']);
     let tags = [];
-    if (tagsProp?.multi_select) {
-      tags = tagsProp.multi_select.map(item => item.name);
+    if (tagsProp && tagsProp.multi_select) {
+      tags = tagsProp.multi_select.map(function (item) { return item.name; });
     }
 
     // LinkedIn URL
     const linkedinProp = getProp(['LinkedInUrl', 'LinkedIn', 'LinkedIn URL', 'Url']);
     let linkedinUrl = 'https://www.linkedin.com/in/jebinjosephj';
-    if (linkedinProp?.url) {
+    if (linkedinProp && linkedinProp.url) {
       linkedinUrl = linkedinProp.url;
     }
 
@@ -579,31 +682,34 @@ async function syncNotionArticles() {
     const blocks = await fetchPageBlocks(page.id);
     const contentHtml = await convertBlocksToHtml(blocks, slug);
 
-    const allText = blocks.map(b => b[b.type]?.rich_text?.map(t => t.plain_text).join('') || '').join(' ').trim();
+    const allText = blocks.map(function (b) {
+      const blkData = b[b.type];
+      if (blkData && blkData.rich_text && Array.isArray(blkData.rich_text)) {
+        return blkData.rich_text.map(function (t) { return t.plain_text; }).join('');
+      }
+      return '';
+    }).join(' ').trim();
     const words = allText.split(/\s+/).filter(Boolean).length;
 
     // Content & summary fallback for drafts
     let finalContent = contentHtml;
     if (!finalContent || words < 5) {
-      finalContent = `
-        <p>This technical article is actively being authored in Notion and synced live to your portfolio.</p>
-        <div class="article-callout">
-          <strong>Live Notion Sync:</strong> You can draft paragraphs, architecture diagrams, callouts, and code blocks directly in your Notion workspace. They will automatically sync here!
-        </div>
-      `;
+      finalContent = '\n        <p>This technical article is actively being authored in Notion and synced live to your portfolio.</p>\n        <div class="article-callout">\n          <strong>Live Notion Sync:</strong> You can draft paragraphs, architecture diagrams, callouts, and code blocks directly in your Notion workspace. They will automatically sync here!\n        </div>\n      ';
     }
 
     // Summary (from property or derived from first block)
     const summaryProp = getProp(['Summary', 'Description', 'Excerpt']);
     let summary = '';
-    if (summaryProp?.rich_text && summaryProp.rich_text.length > 0) {
-      summary = summaryProp.rich_text.map(t => t.plain_text).join('').trim();
+    if (summaryProp && summaryProp.rich_text && summaryProp.rich_text.length > 0) {
+      summary = summaryProp.rich_text.map(function (t) { return t.plain_text; }).join('').trim();
     }
     if (!summary) {
       // Find first paragraph block
-      const firstPara = blocks.find(b => b.type === 'paragraph' && b.paragraph?.rich_text?.length > 0);
-      if (firstPara) {
-        summary = firstPara.paragraph.rich_text.map(t => t.plain_text).join('').trim().slice(0, 180) + '...';
+      const firstPara = blocks.find(function (b) {
+        return b.type === 'paragraph' && b.paragraph && b.paragraph.rich_text && b.paragraph.rich_text.length > 0;
+      });
+      if (firstPara && firstPara.paragraph && firstPara.paragraph.rich_text) {
+        summary = firstPara.paragraph.rich_text.map(function (t) { return t.plain_text; }).join('').trim().slice(0, 180) + '...';
       } else {
         summary = 'Technical architecture and systems engineering analysis synced live from Notion.';
       }
@@ -612,8 +718,8 @@ async function syncNotionArticles() {
     // Read Time (from property or calculated by word count)
     const readTimeProp = getProp(['ReadTime', 'Read Time', 'Reading Time']);
     let readTime = '';
-    if (readTimeProp?.rich_text && readTimeProp.rich_text.length > 0) {
-      readTime = readTimeProp.rich_text.map(t => t.plain_text).join('').trim();
+    if (readTimeProp && readTimeProp.rich_text && readTimeProp.rich_text.length > 0) {
+      readTime = readTimeProp.rich_text.map(function (t) { return t.plain_text; }).join('').trim();
     }
     if (!readTime) {
       readTime = `${Math.max(1, Math.ceil(Math.max(words, 150) / 200))} min read`;
@@ -634,7 +740,7 @@ async function syncNotionArticles() {
   }
 
   // User requirement: Show ONLY Notion contents (no static/foundational fallbacks)
-  const finalArticles = [...articles];
+  const finalArticles = [].concat(articles);
 
   // Ensure directory exists
   const dir = path.dirname(OUTPUT_FILE);
@@ -663,7 +769,8 @@ async function syncNotionArticles() {
             <p style="font-size: 0.92rem; color: var(--text-muted); max-width: 500px; margin: 0 auto;">Articles and technical notes published in your Notion workspace will automatically sync here.</p>
           </div>`;
         } else {
-          cardsHtml = finalArticles.map(art => `
+          cardsHtml = finalArticles.map(function (art) {
+            return `
           <!-- Article: ${escapeHtml(art.title)} -->
           <article class="article-card" data-category="${escapeHtml(art.category)}">
             ${art.coverImage ? `
@@ -682,7 +789,7 @@ async function syncNotionArticles() {
                 ${escapeHtml(art.summary || '')}
               </p>
               <div class="article-tags">
-                ${(art.tags || []).map(t => `<span class="article-tag">${escapeHtml(t)}</span>`).join('\n                ')}
+                ${(art.tags || []).map(function (t) { return `<span class="article-tag">${escapeHtml(t)}</span>`; }).join('\n                ')}
               </div>
               <div class="article-footer">
                 <span class="article-date"><i class="fa-regular fa-calendar"></i> ${escapeHtml(art.date)}</span>
@@ -692,7 +799,8 @@ async function syncNotionArticles() {
                 </button>
               </div>
             </div>
-          </article>`).join('\n');
+          </article>`;
+          }).join('\n');
         }
 
         indexHtml = indexHtml.replace(gridRegex, `$1\n${cardsHtml}\n        </div>\n\n      </div>\n    </section>`);
@@ -705,8 +813,7 @@ async function syncNotionArticles() {
   }
 }
 
-syncNotionArticles().catch(err => {
+syncNotionArticles().catch(function (err) {
   console.error('\n\x1b[31m[FAILED]\x1b[0m', err.message);
   process.exit(1);
 });
-

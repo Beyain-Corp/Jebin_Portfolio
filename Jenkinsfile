@@ -41,8 +41,8 @@ pipeline {
 
         stage('Commit & Push to GitHub') {
             steps {
-                // Uses Jenkins Credential 'github-token' (Username with password: username=GitHub username, password=Personal Access Token)
-                withCredentials([usernamePassword(credentialsId: 'github-token', usernameVariable: 'GH_USER', passwordVariable: 'GH_TOKEN')]) {
+                // Uses Jenkins Credential 'github-pat-jebin' (Username with password: username=GitHub username, password=Personal Access Token)
+                withCredentials([usernamePassword(credentialsId: 'github-pat-jebin', usernameVariable: 'GH_USER', passwordVariable: 'GH_TOKEN')]) {
                     sh '''
                         git config user.name "Jenkins Automation [OCI]"
                         git config user.email "jenkins-bot@beyain-corp.com"
