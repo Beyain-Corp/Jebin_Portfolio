@@ -3,7 +3,7 @@ pipeline {
 
     // Run automatically every 15 minutes
     triggers {
-        cron('H/15 * * * *')
+        cron('H/5 * * * *')
     }
 
     options {
