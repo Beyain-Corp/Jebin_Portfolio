@@ -553,7 +553,8 @@ function initArticleReader() {
   attachArticleListeners();
 
   // Load dynamic articles if assets/data/articles.json is present (synced from Notion)
-  fetch('assets/data/articles.json')
+  // Cache-busting parameter (?t=...) ensures visitors immediately get fresh content without CDN/browser cache delay
+  fetch('assets/data/articles.json?t=' + Date.now(), { cache: 'no-cache' })
     .then(res => {
       if (!res.ok) throw new Error('Data file not available');
       return res.json();

@@ -39,7 +39,7 @@ jobs:
           git add assets/data/articles.json assets/img/notion/ index.html
           if ! git diff --staged --quiet; then
             echo "Changes detected in Notion articles or assets. Committing..."
-            git commit -m "chore(cms): sync latest articles from Notion [skip ci]"
+            git commit -m "chore(cms): sync latest articles from Notion"
             git push
             echo "Successfully synced and pushed latest Notion content!"
           else

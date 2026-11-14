@@ -29,7 +29,7 @@ if ! git diff --staged --quiet; then
     echo "[INFO] New or updated articles detected from Notion. Committing..."
     git config user.name "Jenkins Automation [OCI]"
     git config user.email "jenkins-bot@beyain-corp.com"
-    git commit -m "chore(cms): auto-sync articles from Notion [skip ci]"
+    git commit -m "chore(cms): auto-sync articles from Notion"
     
     echo "[INFO] Pushing changes to GitHub main branch..."
     # If GH_TOKEN is provided in environment, push authenticated, else standard git push
