@@ -664,8 +664,12 @@ function initArticleReader() {
    -------------------------------------------------------------------------- */
 function initArticleCategoryFilter() {
   const filterBar = document.getElementById('articlesFilterBar');
+  if (!filterBar) return;
   const cards = document.querySelectorAll('.article-card');
-  if (!filterBar || cards.length === 0) return;
+  if (cards.length === 0) {
+    filterBar.innerHTML = '';
+    return;
+  }
 
   const categories = new Set();
   cards.forEach(card => {

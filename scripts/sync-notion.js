@@ -92,8 +92,28 @@ async function downloadAndCacheImage(imageUrl, prefix = 'img') {
     // Automatically optimize large images (resize to 1200px max & compress) to eliminate web buffering
     try {
       const { execSync } = require('node:child_process');
-      execSync(`sips -Z 1200 -s format jpeg -s formatOptions 85 "${localFilePath}" --out "${optimizedJpgLocal}"`, { stdio: 'ignore' });
-      if (fs.existsSync(optimizedJpgLocal) && fs.statSync(optimizedJpgLocal).size > 0) {
+      let compressed = false;
+      // 1. macOS native: sips
+      try {
+        execSync(`sips -Z 1200 -s format jpeg -s formatOptions 85 "${localFilePath}" --out "${optimizedJpgLocal}"`, { stdio: 'ignore' });
+        compressed = true;
+      } catch {
+        // 2. Linux native: ffmpeg
+        try {
+          execSync(`ffmpeg -y -v error -i "${localFilePath}" -vf "scale='min(1200,iw)':-1" -q:v 3 "${optimizedJpgLocal}"`, { stdio: 'ignore' });
+          compressed = true;
+        } catch {
+          // 3. Linux native: ImageMagick convert
+          try {
+            execSync(`convert "${localFilePath}" -resize "1200x>" -quality 85 "${optimizedJpgLocal}"`, { stdio: 'ignore' });
+            compressed = true;
+          } catch {
+            compressed = false;
+          }
+        }
+      }
+
+      if (compressed && fs.existsSync(optimizedJpgLocal) && fs.statSync(optimizedJpgLocal).size > 0) {
         if (fs.statSync(optimizedJpgLocal).size < fs.statSync(localFilePath).size) {
           fs.unlinkSync(localFilePath);
           const kb = Math.round(fs.statSync(optimizedJpgLocal).size / 1024);
@@ -104,7 +124,7 @@ async function downloadAndCacheImage(imageUrl, prefix = 'img') {
         }
       }
     } catch (e) {
-      // sips not available or failed; keep original downloaded file
+      // Optimizer not available or failed; keep original downloaded file
     }
 
     console.log(`    \x1b[32m[CACHED]\x1b[0m Saved to ${relativeWebPath}`);
@@ -394,6 +414,12 @@ async function syncNotionArticles() {
   if (target.type === 'database') {
     console.log(`\x1b[36m[INFO]\x1b[0m Querying Notion Database (${target.id})...`);
     const queryBody = {
+      filter: {
+        property: 'Published',
+        checkbox: {
+          equals: true
+        }
+      },
       sorts: [
         {
           property: 'Date',
@@ -474,6 +500,24 @@ async function syncNotionArticles() {
       }
     }
     if (!title) title = 'Engineering Insight';
+
+    // 1. Published Checkbox Verification (Draft Filtering)
+    // Only upload/sync articles where the 'Published' checkbox is ticked (true).
+    const publishedProp = getProp(['Published', 'Publish', 'Is Published', 'Live']);
+    if (publishedProp) {
+      if (publishedProp.type === 'checkbox' && !publishedProp.checkbox) {
+        console.log(` -> \x1b[33m[SKIPPED DRAFT]\x1b[0m "${title}" (Published checkbox is unchecked in Notion)`);
+        continue;
+      }
+      if (publishedProp.type === 'status' && publishedProp.status?.name?.toLowerCase() !== 'published') {
+        console.log(` -> \x1b[33m[SKIPPED DRAFT]\x1b[0m "${title}" (Status is ${publishedProp.status?.name})`);
+        continue;
+      }
+      if (publishedProp.type === 'select' && publishedProp.select?.name?.toLowerCase() !== 'published') {
+        console.log(` -> \x1b[33m[SKIPPED DRAFT]\x1b[0m "${title}" (Status is ${publishedProp.select?.name})`);
+        continue;
+      }
+    }
 
     // Standard auto-generated slug based on article title
     const slug = `article-${slugify(title)}`;
