@@ -7,7 +7,13 @@
     "date": "Nov 2026",
     "summary": "Active Directory Domain Services (AD DS) is the central authority for identity, authentication, and security policies in a Windows environment. In Windows Server 2025, establishing a Domain Controller remains a strict two-phase process: first, installing the AD DS server role, and second, promoting the server to act as a Domain Controller.",
     "tags": [
-      "Test"
+      "Active Directory",
+      "Windows Server",
+      "ADDS",
+      "Domain",
+      "Domain Controller",
+      "FSMO",
+      "Implementation"
     ],
     "coverImage": "assets/img/notion/article-configure-active-direc-5a8554d177.jpg",
     "linkedinUrl": "https://www.linkedin.com/in/jebinjosephj",
