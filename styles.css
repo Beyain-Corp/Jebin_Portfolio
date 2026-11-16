@@ -951,9 +951,18 @@ code, .font-mono {
   gap: 0.4rem;
 }
 
-.verified-icon {
-  color: var(--accent-cyan);
-  font-size: 1.1rem;
+.verified-icon.meta-verified-badge {
+  width: 1.25rem;
+  height: 1.25rem;
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+  filter: drop-shadow(0 1px 2px rgba(0, 149, 246, 0.35));
+  transition: transform var(--transition-fast);
+}
+
+.profile-card:hover .meta-verified-badge {
+  transform: scale(1.12);
 }
 
 .profile-role {
@@ -973,9 +982,9 @@ code, .font-mono {
 }
 
 .profile-title {
-  font-size: clamp(0.78rem, 2.3vw, 0.88rem);
+  font-size: clamp(0.8rem, 2.3vw, 0.88rem);
   color: var(--accent-cyan);
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-weight: 600;
   line-height: 1.35;
 }
