@@ -776,7 +776,7 @@ function initResumeModal() {
       modal.classList.add('active');
       document.body.style.overflow = 'hidden';
       if (modalIframe && !modalIframe.getAttribute('src')) {
-        modalIframe.setAttribute('src', 'assets/docs/Jebin_Joseph_Resume.pdf');
+        modalIframe.setAttribute('src', 'assets/docs/Jebin_Joseph_Resume.pdf?v=' + Date.now());
       }
     });
   });
