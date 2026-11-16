@@ -253,7 +253,7 @@ Portfolio  : https://beyain-corp.github.io/Jebin_Portfolio/
 LinkedIn   : https://www.linkedin.com/in/jebinjosephj
 GitHub     : https://github.com/Beyain-Corp
 Instagram  : https://www.instagram.com/jebin_j_joseph/
-Location   : 5/113, Pillaiyar Kovil Street, Pasumpon Nagar, Perumbakkam, Chennai, Tamil Nadu, India
+Location   : Chennai, Tamil Nadu, India
 Personal   : Nationality: Indian | Marital Status: Married | Blood Group: O+
 Languages  : Tamil & English
     `,
@@ -288,7 +288,7 @@ Languages  : Tamil & English
 • Email     : jjebin05@gmail.com
 • Phone     : +91-9043437743
 • WhatsApp  : https://wa.me/+919043437743
-• Address   : 5/113, Pillaiyar Kovil Street, Pasumpon Nagar, Perumbakkam, Chennai, Tamil Nadu, India
+• Location  : Chennai, Tamil Nadu, India
     `,
     linkedin: `
 [LINKEDIN CONNECTION]
