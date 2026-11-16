@@ -244,45 +244,51 @@ System Status: ALL SYSTEMS FULLY OPERATIONAL
 [EXECUTIVE BIO]
 Name       : Jebin Joseph J.
 Degree     : B.E. in Electronics & Communication Engineering (E.C.E.)
-Title      : IT Infrastructure Lead & Systems Manager
-Domain     : Enterprise Virtualization, Cloud Identity & Disaster Recovery
-Experience : 8+ Years Enterprise IT Infrastructure & Systems Leadership
+Title      : IT Infrastructure Lead & Systems Administrator
+Domain     : Enterprise Virtualization, Hybrid Cloud Identity & Disaster Recovery
+Experience : 8+ Years Enterprise IT Experience
 Philosophy : "Learn • Innovate • Lead"
 Values     : Drive Innovation | Deliver Excellence | Value People
+Portfolio  : https://beyain-corp.github.io/Jebin_Portfolio/
 LinkedIn   : https://www.linkedin.com/in/jebinjosephj
 GitHub     : https://github.com/Beyain-Corp
 Instagram  : https://www.instagram.com/jebin_j_joseph/
-Location   : Chennai, Tamil Nadu, India
+Location   : 5/113, Pillaiyar Kovil Street, Pasumpon Nagar, Perumbakkam, Chennai, Tamil Nadu, India
+Personal   : Nationality: Indian | Marital Status: Married | Blood Group: O+
+Languages  : Tamil & English
     `,
     skills: `
-[CORE TECHNICAL ARSENAL]
-- Virtualization  : VMware ESXi 7.x/8.x, vCenter, HA/DRS, Hyper-V, Windows/Linux Server Fleet
-- Cloud Identity  : Microsoft Entra ID, Microsoft 365, Exchange Online, Hybrid Sync, MFA
-- Storage & DR    : SAN/NAS (iSCSI, NFS, FC), Commvault Backup & Recovery, Replication
-- Cyber Defense   : SentinelOne EDR/XDR, GPO Hardening, GxP Audit Readiness, Zero-Trust
-- Networking      : AD DS, DNS, DHCP, Enterprise VPN, VLANs, Websense URL Filtering
-- Automation/ITSM : Jenkins CI/CD, Shell Scripting, ITIL v4, Lansweeper, SCCM
+[CORE COMPETENCIES & TECHNICAL ARSENAL]
+• Virtualization & Systems : VMware ESXi & vCenter 7.x/8.x, Windows Server (2012–2025), Linux (Ubuntu, CentOS), Hyper-V, High Availability (HA/DRS)
+• Cloud & Identity Gov     : Oracle Cloud Infrastructure (OCI), Microsoft Entra ID (Azure AD), Microsoft 365, Exchange Online, Hostinger, Hybrid Sync (Azure AD Connect), Conditional Access, MFA, IAM
+• Storage & DR             : Enterprise SAN/NAS (iSCSI/NFS/FC), Commvault Backup & Recovery, Replication, DR Automation, RTO/RPO SLA Adherence
+• Security & Compliance    : SentinelOne (EDR/XDR), Endpoint Detection & Response, Vulnerability Mitigation, GxP Audit Readiness, GPO Hardening, Zero-Trust
+• Networking & Core        : Active Directory Domain Services (AD DS), DNS, DHCP, Enterprise VPN, TCP/IP, Routing/VLANs, Websense URL Filtering
+• ITSM & Automation        : ITIL v4 Framework, Incident & Change Management, SLA Tracking, Lansweeper (Asset & Inventory Management), GitHub, Jenkins CI/CD, Shell Scripting, Notion (Documentation & Workflows), Vendor & Asset Lifecycle
     `,
     experience: `
 [CAREER TRAJECTORY]
 1. [2024 - Present] Orchid Pharma Ltd — IT Executive (Infrastructure & Operations)
-   • 99.9% virtualization uptime, 1,000+ Entra ID accounts, GxP Commvault DR
-2. [2022 - 2024]    Norwin Technologies — Technical Analyst (Cloud & Monitoring)
+   • 99.9% virtualization uptime, 1,000+ Entra ID accounts, GxP Commvault DR (<1h RPO / <4h RTO)
+2. [2022 - 2024]    Norwin Technologies — Technical Analyst (Cloud Infrastructure & Monitoring)
    • Multi-tenant AWS/Azure observability, SLA escalation mitigation, Tableau analytics
 3. [2019 - 2022]    Orchid Pharma Ltd — Technical Support Engineer (Systems & Operations)
    • Enterprise server fleet, SCCM OS imaging, SAP MM support, trained 40+ staff
 4. [2018 - 2019]    Cinehive Web Technologies — Digital Image & Systems Technician
+   • High-capacity storage arrays, high-throughput video transcoding clusters, archive restoration
 5. [2017 - 2018]    Reliance Digital Retail Ltd — IT Consultant
+   • Hardware lifecycle, vendor warranty contracts, POS terminal reliability, executive reporting
     `,
     contact: `
 [DIRECT COMMUNICATION CHANNELS]
+• Portfolio : https://beyain-corp.github.io/Jebin_Portfolio/
 • LinkedIn  : https://www.linkedin.com/in/jebinjosephj
 • GitHub    : https://github.com/Beyain-Corp
 • Instagram : https://www.instagram.com/jebin_j_joseph/
 • Email     : jjebin05@gmail.com
 • Phone     : +91-9043437743
 • WhatsApp  : https://wa.me/+919043437743
-• Location  : Perumbakkam, Chennai, Tamil Nadu, India
+• Address   : 5/113, Pillaiyar Kovil Street, Pasumpon Nagar, Perumbakkam, Chennai, Tamil Nadu, India
     `,
     linkedin: `
 [LINKEDIN CONNECTION]

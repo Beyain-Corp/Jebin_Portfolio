@@ -14,12 +14,12 @@ A modern, high-performance, responsive portfolio website created for **Jebin Jos
    - Animated KPI counters tracking **8+ Years** Enterprise IT Experience, **99.9%** Cluster Uptime, **1,000+** Entra ID User Accounts Governed, **< 1h / < 4h** RPO/RTO SLAs, **98%+** SLA Resolution Rate, and **30%** Overhead Reduction.
 
 3. **Core Competency Pillars (6 Pillars)**:
-   - **Virtualization & Systems** (VMware ESXi 7.x/8.x, vCenter, HA/DRS, Windows/Linux server fleet).
-   - **Cloud & Identity Governance** (Microsoft Entra ID, Microsoft 365, Exchange Online, Azure AD Connect, Conditional Access, Zero-Trust MFA).
-   - **Enterprise Storage & BCP** (SAN/NAS iSCSI/NFS/FC, Commvault Backup & Recovery, Live DR Restoration Drills).
-   - **Security & Compliance** (SentinelOne EDR/XDR, GPO Hardening, GxP Pharma Regulatory Compliance, Vulnerability Mitigation).
-   - **Networking & Core Services** (AD DS, DNS, DHCP, Enterprise VPN, VLAN Segmentation, Websense URL Filtering).
-   - **ITSM, Automation & DevOps** (ITIL v4 Framework, Incident & Change Management, RCA, Jenkins CI/CD, Shell Scripting, Lansweeper, SCCM).
+   - **Virtualization & Systems** (VMware ESXi & vCenter 7.x/8.x, Windows Server 2012–2025, Linux Ubuntu/CentOS, Hyper-V, HA/DRS).
+   - **Cloud & Identity Governance** (Oracle Cloud OCI, Microsoft Entra ID / Azure AD, Microsoft 365, Exchange Online, Hostinger, Azure AD Connect, Conditional Access, MFA, IAM).
+   - **Storage & Disaster Recovery** (Enterprise SAN/NAS iSCSI/NFS/FC, Commvault Backup & Recovery, Replication, DR Automation, RTO/RPO SLA Adherence).
+   - **Security & Compliance** (SentinelOne EDR/XDR, Endpoint Detection & Response, Vulnerability Mitigation, GxP Audit Readiness, GPO Hardening, Zero-Trust).
+   - **Networking & Core Services** (AD DS, DNS, DHCP, Enterprise VPN, TCP/IP, Routing/VLANs, Websense URL Filtering).
+   - **ITSM & Automation** (ITIL v4 Framework, Incident & Change Management, SLA Tracking, Lansweeper, GitHub, Jenkins CI/CD, Shell Scripting, Notion Workflows, Vendor & Asset Lifecycle).
 
 4. **Technical Insights & Engineering Articles (Notion Headless CMS)**:
    - Dedicated articles showcase (`#articles`) featuring comprehensive engineering writeups.
