@@ -262,22 +262,33 @@ Languages  : Tamil & English
 [CORE COMPETENCIES & TECHNICAL ARSENAL]
 • Virtualization & Systems : VMware ESXi & vCenter 7.x/8.x, Windows Server (2012–2025), Linux (Ubuntu, CentOS), Hyper-V, High Availability (HA/DRS)
 • Cloud & Identity Gov     : Oracle Cloud Infrastructure (OCI), Microsoft Entra ID (Azure AD), Microsoft 365, Exchange Online, Hostinger, Hybrid Sync (Azure AD Connect), Conditional Access, MFA, IAM
-• Storage & DR             : Enterprise SAN/NAS (iSCSI/NFS/FC), Commvault Backup & Recovery, Replication, DR Automation, RTO/RPO SLA Adherence
-• Security & Compliance    : SentinelOne (EDR/XDR), Endpoint Detection & Response, Vulnerability Mitigation, GxP Audit Readiness, GPO Hardening, Zero-Trust
+• Storage & DR             : Dell EMC PowerStore, NetApp ONTAP SAN/NAS (iSCSI/NFS/FC), Commvault Backup & Recovery, Replication, DR Automation, RTO/RPO SLA Adherence
+• Security & Compliance    : SentinelOne (EDR/XDR), Sophos Firewall & Enterprise VPN, Vulnerability Mitigation, GxP Audit Readiness, GPO Hardening, Zero-Trust
 • Networking & Core        : Active Directory Domain Services (AD DS), DNS, DHCP, Enterprise VPN, TCP/IP, Routing/VLANs, Websense URL Filtering
-• ITSM & Automation        : ITIL v4 Framework, Incident & Change Management, SLA Tracking, Lansweeper (Asset & Inventory Management), GitHub, Jenkins CI/CD, Shell Scripting, Notion (Documentation & Workflows), Vendor & Asset Lifecycle
+• ITSM & Automation        : ITIL v4 Framework, OrchidRDM Session Optimizer, Incident & Change Management, SLA Tracking, Lansweeper, GitHub, Jenkins CI/CD, Shell Scripting, Notion
+    `,
+    certs: `
+[PROFESSIONAL CERTIFICATIONS & CISCO BADGES]
+• Cisco Junior Cybersecurity Analyst Career Path — Cisco Networking Academy
+  Threat intelligence analysis, SOC operations, network defense & incident handling.
+• Cisco Endpoint Security — Cisco Networking Academy
+  Enterprise EDR/XDR defense, malware mitigation & automated host containment.
+• Cisco Ethical Hacker — Cisco Networking Academy
+  Vulnerability assessment methodologies, reconnaissance & defensive posture validation.
+• Cisco Introduction to Cybersecurity — Cisco Networking Academy
+  Enterprise defense fundamentals, Zero-Trust architecture & data privacy governance.
     `,
     experience: `
 [CAREER TRAJECTORY]
-1. [2024 - Present] Orchid Pharma Ltd — IT Executive (Infrastructure & Operations)
-   • 99.9% virtualization uptime, 1,000+ Entra ID accounts, GxP Commvault DR (<1h RPO / <4h RTO)
-2. [2022 - 2024]    Norwin Technologies — Technical Analyst (Cloud Infrastructure & Monitoring)
+1. [Feb 2024 - Present] Orchid Pharma Ltd — IT Executive (Infrastructure & Operations)
+   • 99.9% virtualization uptime, 1,000+ Entra ID accounts, GxP Commvault DR (<1h RPO / <4h RTO), OrchidRDM GUI
+2. [Jan 2022 - Feb 2024] Norwin Technologies — Technical Analyst (Cloud Infrastructure & Monitoring)
    • Multi-tenant AWS/Azure observability, SLA escalation mitigation, Tableau analytics
-3. [2019 - 2022]    Orchid Pharma Ltd — Technical Support Engineer (Systems & Operations)
+3. [Aug 2019 - Jan 2022] Orchid Pharma Ltd — Technical Support Engineer (Systems & Operations)
    • Enterprise server fleet, SCCM OS imaging, SAP MM support, trained 40+ staff
-4. [2018 - 2019]    Cinehive Web Technologies — Digital Image & Systems Technician
+4. [May 2018 - May 2019] Cinehive Web Technologies — Digital Image & Systems Technician
    • High-capacity storage arrays, high-throughput video transcoding clusters, archive restoration
-5. [2017 - 2018]    Reliance Digital Retail Ltd — IT Consultant
+5. [Oct 2017 - Apr 2018] Reliance Digital Retail Ltd — IT Consultant (Final-Year Internship / Part-Time)
    • Hardware lifecycle, vendor warranty contracts, POS terminal reliability, executive reporting
     `,
     contact: `
