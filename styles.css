@@ -1020,7 +1020,7 @@ code, .font-mono {
 }
 
 .floating-badge-top {
-  top: 20px;
+  top: 290px;
   right: -25px;
   animation: float-slow 4s ease-in-out infinite;
 }
