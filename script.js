@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initResumeModal();
   initContactForm();
   initBackToTop();
+  initAnalyticsTracking();
 });
 
 /* --------------------------------------------------------------------------
@@ -433,6 +434,7 @@ Status        : 100% HEALTHY & SYNCHRONIZED
     const content = typeof rawContent === 'function' ? rawContent() : rawContent;
 
     if (content) {
+      trackEvent('terminal_command', { command: cmd });
       responseLine.innerHTML = `<pre style="font-family: inherit; margin: 0.35rem 0; white-space: pre-wrap; color: #38bdf8;">${content.trim()}</pre>`;
       if (cmd === 'resume') {
         const link = document.createElement('a');
@@ -784,6 +786,7 @@ function initResumeModal() {
       if (modalIframe && !modalIframe.getAttribute('src')) {
         modalIframe.setAttribute('src', 'assets/docs/Jebin_Joseph_Resume.pdf?v=' + Date.now());
       }
+      trackEvent('view_resume_modal', { source: 'button_click' });
     });
   });
 
@@ -824,6 +827,8 @@ function initContactForm() {
       const subject = document.getElementById('formSubject').value;
       const message = document.getElementById('formMessage').value;
 
+      trackEvent('submit_contact_form', { method: 'email', subject_length: subject.length });
+
       const mailtoLink = `mailto:jjebin05@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(
         `Hi Jebin,\n\nMy name is ${name} (${email}).\n\n${message}`
       )}`;
@@ -837,6 +842,8 @@ function initContactForm() {
       e.preventDefault();
       const name = document.getElementById('formName').value || 'Visitor';
       const message = document.getElementById('formMessage').value || 'I came across your portfolio and would like to connect.';
+
+      trackEvent('click_whatsapp', { source: 'contact_form' });
 
       const text = `Hello Jebin! My name is ${name}. ${message}`;
       const url = `https://wa.me/919043437743?text=${encodeURIComponent(text)}`;
@@ -864,6 +871,43 @@ function initBackToTop() {
     window.scrollTo({
       top: 0,
       behavior: 'smooth'
+    });
+  });
+}
+
+/* --------------------------------------------------------------------------
+   10. Google Analytics 4 Custom Event Tracking
+   -------------------------------------------------------------------------- */
+function trackEvent(name, params = {}) {
+  if (typeof window.gtag === 'function') {
+    window.gtag('event', name, params);
+  }
+}
+
+function initAnalyticsTracking() {
+  // Track all direct resume download link clicks across navbar, hero, about, and contact
+  document.querySelectorAll('a[download], a[href*="Resume.pdf"]').forEach(link => {
+    link.addEventListener('click', () => {
+      trackEvent('download_resume', {
+        file_name: 'Jebin_Joseph_Resume.pdf',
+        link_text: link.innerText.trim() || 'Download'
+      });
+    });
+  });
+
+  // Track social and professional outbound links
+  document.querySelectorAll('a[href*="linkedin.com"], a[href*="github.com"], a[href*="instagram.com"]').forEach(link => {
+    link.addEventListener('click', () => {
+      const href = link.getAttribute('href') || '';
+      let platform = 'external';
+      if (href.includes('linkedin.com')) platform = 'linkedin';
+      else if (href.includes('github.com')) platform = 'github';
+      else if (href.includes('instagram.com')) platform = 'instagram';
+
+      trackEvent('click_social_profile', {
+        platform: platform,
+        destination: href
+      });
     });
   });
 }
