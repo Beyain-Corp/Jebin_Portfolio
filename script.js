@@ -268,7 +268,13 @@ Languages  : Tamil & English
 • ITSM & Automation        : ITIL v4 Framework, OrchidRDM Session Optimizer, Incident & Change Management, SLA Tracking, Lansweeper, GitHub, Jenkins CI/CD, Shell Scripting, Notion
     `,
     certs: `
-[PROFESSIONAL CERTIFICATIONS & CISCO BADGES]
+[PROFESSIONAL CERTIFICATIONS & INDUSTRY CREDENTIALS]
+• Oracle Cloud Infrastructure Certified Foundations Associate — Oracle University (2026–2028)
+  Compute instances, VCN networking, IAM governance, security lists & cloud economics. ID: 333567262OCI26FNDCFA
+• Oracle Fusion AI Agent Studio Certified Foundations Associate — Oracle University (Rel 1 & Rel 26-2)
+  Autonomous AI agent workflows, Fusion applications integration & enterprise orchestration. ID: 333567262OFAASFA
+• Deploying Claude Enterprise with Confidence — Claude Academy / Anthropic (Issued Nov 2026)
+  Enterprise AI deployment, data privacy & access boundary governance. Verification: academy.claude.com/verify/d37eb7a9f98a181f672c42711ea9c9a0
 • Cisco Junior Cybersecurity Analyst Career Path — Cisco Networking Academy
   Threat intelligence analysis, SOC operations, network defense & incident handling.
 • Cisco Endpoint Security — Cisco Networking Academy
